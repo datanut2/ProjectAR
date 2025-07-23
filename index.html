@@ -53,15 +53,23 @@
     }
 
     /* สถานะการสแกน */
-    .status-container {
+    .top-container {
       position: fixed;
-      top: 20px; /* ย้ายไปด้านบน */
+      top: 20px;
       left: 0;
       right: 0;
       display: flex;
       justify-content: center;
-      align-items: center;
-      gap: 10px;
+      z-index: 1000;
+    }
+
+    .bottom-container {
+      position: fixed;
+      bottom: 30px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
       z-index: 1000;
     }
 
@@ -73,17 +81,68 @@
       font-size: 18px;
       font-family: sans-serif;
       transition: all 0.3s ease;
-      display: flex; /* ทำให้ข้อความอยู่บรรทัดเดียวกัน */
-      gap: 15px; /* ระยะห่างระหว่างข้อความ */
+    }
+
+    /* ปุ่มอัพโหลด */
+    .upload-container {
+      position: fixed;
+      top: 100px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .upload-box {
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-family: sans-serif;
+    }
+
+    .upload-box input[type="file"] {
+      display: none;
+    }
+
+    .upload-btn {
+      background: #00ff00;
+      color: black;
+      padding: 8px 16px;
+      border-radius: 15px;
+      cursor: pointer;
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+
+    .upload-btn:hover {
+      background: #00cc00;
+    }
+
+    #model-info {
+      margin-left: 10px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body style="margin: 0; overflow: hidden;">
-  <!-- สถานะและคำแนะนำ -->
-  <div class="status-container">
+  <!-- ข้อความด้านบน -->
+  <div class="top-container">
     <div class="status-box">
       <div id="guide">จัดให้อยู่ในกรอบ</div>
-      <div id="status">กำลังค้นหามาร์คเกอร์...</div>
+    </div>
+  </div>
+
+  <!-- ปุ่มอัพโหลดไฟล์ -->
+  <div class="upload-container">
+    <div class="upload-box">
+      <label class="upload-btn">
+        เลือกโมเดล 3D
+        <input type="file" id="model-upload" accept=".glb,.gltf">
+      </label>
+      <span id="model-info">ยังไม่ได้เลือกไฟล์</span>
     </div>
   </div>
 
@@ -95,20 +154,27 @@
     <div class="corner bottom-right"></div>
   </div>
 
+  <!-- ข้อความด้านล่าง -->
+  <div class="bottom-container">
+    <div class="status-box">
+      <div id="status">กำลังค้นหามาร์คเกอร์...</div>
+    </div>
+  </div>
+
   <!-- AR Scene -->
   <a-scene 
     embedded
     vr-mode-ui="enabled: false"
     arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;">
 
-    <!-- เปลี่ยนเป็น Hiro Marker -->
     <a-marker 
-      preset="hiro"
+      type="pattern" 
+      url="marker.patt"
       smooth="true"
       smoothCount="5"
       id="animated-marker">
       <a-entity 
-        gltf-model="url(model.glb)"
+        id="model-entity"
         scale="0.5 0.5 0.5"
         position="0 0 0"
         rotation="-90 0 0"
@@ -124,17 +190,30 @@
       const status = document.getElementById('status');
       const guide = document.getElementById('guide');
       const marker = document.querySelector('#animated-marker');
+      const modelUpload = document.getElementById('model-upload');
+      const modelInfo = document.getElementById('model-info');
+      const modelEntity = document.getElementById('model-entity');
+
+      // จัดการการอัพโหลดไฟล์
+      modelUpload.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          modelInfo.textContent = file.name;
+          const url = URL.createObjectURL(file);
+          modelEntity.setAttribute('gltf-model', url);
+        }
+      });
 
       // เมื่อเจอมาร์คเกอร์
       marker.addEventListener('markerFound', function() {
-        guide.style.display = 'none';
+        guide.parentElement.style.display = 'none';
         status.textContent = 'พบมาร์คเกอร์แล้ว!';
         status.parentElement.style.background = 'rgba(0, 255, 0, 0.7)';
       });
 
       // เมื่อมาร์คเกอร์หายไป
       marker.addEventListener('markerLost', function() {
-        guide.style.display = 'inline';
+        guide.parentElement.style.display = 'flex';
         status.textContent = 'กำลังค้นหามาร์คเกอร์...';
         status.parentElement.style.background = 'rgba(0, 0, 0, 0.7)';
       });
