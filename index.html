@@ -28,7 +28,34 @@
     .top-right { top: -2px; right: -2px; border-left: none; border-bottom: none; }
     .bottom-left { bottom: -2px; left: -2px; border-right: none; border-top: none; }
     .bottom-right { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+    #status {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      z-index: 1000;
+    }
   </style>
+  <script>
+    window.onload = function() {
+      const status = document.getElementById('status');
+      const marker = document.querySelector('a-marker[type="pattern"]');
+      
+      marker.addEventListener('markerFound', function() {
+        status.textContent = 'มาร์คเกอร์ถูกตรวจพบ!';
+        status.style.background = 'rgba(0, 255, 0, 0.7)';
+      });
+      
+      marker.addEventListener('markerLost', function() {
+        status.textContent = 'กำลังค้นหามาร์คเกอร์...';
+        status.style.background = 'rgba(0, 0, 0, 0.7)';
+      });
+    };
+  </script>
 </head>
 <body style="margin: 0; overflow: hidden;">
   <div class="scan-area">
@@ -37,6 +64,7 @@
     <div class="corner bottom-left"></div>
     <div class="corner bottom-right"></div>
   </div>
+  <div id="status">กำลังค้นหามาร์คเกอร์...</div>
   <a-scene 
       embedded 
       vr-mode-ui="enabled: false"
@@ -48,13 +76,21 @@
     </a-marker>
 
     <!-- 2) ใช้ AR Marker ของเรา (marker.patt) -->
-    <a-marker type="pattern" url="marker.patt" emitevents="true" smooth="true" smoothCount="5">
+    <a-marker 
+      type="pattern" 
+      url="marker.patt" 
+      emitevents="true" 
+      smooth="true" 
+      smoothCount="5"
+      raycaster="objects: .clickable"
+      cursor="fuse: false; rayOrigin: mouse;">
       <a-entity 
         gltf-model="url(model.glb)" 
+        class="clickable"
         animation-mixer
-        scale="1 1 1"
+        scale="0.5 0.5 0.5"
         position="0 0 0"
-        rotation="0 0 0">
+        rotation="-90 0 0">
       </a-entity>
     </a-marker>
 
