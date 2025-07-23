@@ -1,9 +1,0 @@
-{
-  "name": "ar-project",
-  "version": "1.0.0",
-  "description": "AR Web Project",
-  "main": "index.html",
-  "scripts": {
-    "start": "live-server"
-  }
-}

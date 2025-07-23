@@ -2,100 +2,146 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <title>WebAR Demo</title>
+  <title>AR Scanner</title>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
   <style>
-    .scan-area {
+    /* กรอบสแกน */
+    .scan-frame {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 250px;
-      height: 250px;
-      border: 2px solid #fff;
-      border-radius: 10px;
+      width: 280px;
+      height: 280px;
+      border: 3px solid rgba(255, 255, 255, 0.8);
+      border-radius: 20px;
       z-index: 1000;
       pointer-events: none;
+      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.4);
     }
+
+    /* มุมกรอบ */
     .corner {
       position: absolute;
-      width: 20px;
-      height: 20px;
-      border: 2px solid #00ff00;
+      width: 30px;
+      height: 30px;
     }
-    .top-left { top: -2px; left: -2px; border-right: none; border-bottom: none; }
-    .top-right { top: -2px; right: -2px; border-left: none; border-bottom: none; }
-    .bottom-left { bottom: -2px; left: -2px; border-right: none; border-top: none; }
-    .bottom-right { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+    .top-left {
+      top: -3px;
+      left: -3px;
+      border-left: 4px solid #00ff00;
+      border-top: 4px solid #00ff00;
+    }
+    .top-right {
+      top: -3px;
+      right: -3px;
+      border-right: 4px solid #00ff00;
+      border-top: 4px solid #00ff00;
+    }
+    .bottom-left {
+      bottom: -3px;
+      left: -3px;
+      border-left: 4px solid #00ff00;
+      border-bottom: 4px solid #00ff00;
+    }
+    .bottom-right {
+      bottom: -3px;
+      right: -3px;
+      border-right: 4px solid #00ff00;
+      border-bottom: 4px solid #00ff00;
+    }
+
+    /* สถานะการสแกน */
     #status {
       position: fixed;
-      bottom: 20px;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 15px 30px;
+      border-radius: 30px;
+      font-size: 18px;
+      font-family: sans-serif;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    /* คำแนะนำ */
+    #guide {
+      position: fixed;
+      top: 20px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(0, 0, 0, 0.7);
       color: white;
       padding: 10px 20px;
-      border-radius: 5px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-family: sans-serif;
       z-index: 1000;
     }
   </style>
-  <script>
-    window.onload = function() {
-      const status = document.getElementById('status');
-      const marker = document.querySelector('a-marker[type="pattern"]');
-      
-      marker.addEventListener('markerFound', function() {
-        status.textContent = 'มาร์คเกอร์ถูกตรวจพบ!';
-        status.style.background = 'rgba(0, 255, 0, 0.7)';
-      });
-      
-      marker.addEventListener('markerLost', function() {
-        status.textContent = 'กำลังค้นหามาร์คเกอร์...';
-        status.style.background = 'rgba(0, 0, 0, 0.7)';
-      });
-    };
-  </script>
 </head>
 <body style="margin: 0; overflow: hidden;">
-  <div class="scan-area">
+  <!-- กรอบสแกน -->
+  <div class="scan-frame">
     <div class="corner top-left"></div>
     <div class="corner top-right"></div>
     <div class="corner bottom-left"></div>
     <div class="corner bottom-right"></div>
   </div>
-  <div id="status">กำลังค้นหามาร์คเกอร์...</div>
-  <a-scene 
-      embedded 
-      vr-mode-ui="enabled: false"
-      arjs="sourceType: webcam; debugUIEnabled: true;">
-      
-    <!-- 1) ทดสอบด้วย Hiro Marker -->
-    <a-marker preset="hiro">
-      <a-box position="0 0.5 0" material="color: red"></a-box>
-    </a-marker>
 
-    <!-- 2) ใช้ AR Marker ของเรา (marker.patt) -->
+  <!-- สถานะและคำแนะนำ -->
+  <div id="guide">จัดให้มาร์คเกอร์อยู่ในกรอบสี่เหลี่ยม</div>
+  <div id="status">กำลังค้นหามาร์คเกอร์...</div>
+
+  <!-- AR Scene -->
+  <a-scene 
+    embedded
+    vr-mode-ui="enabled: false"
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;">
+
+    <!-- มาร์คเกอร์และโมเดล -->
     <a-marker 
       type="pattern" 
-      url="marker.patt" 
-      emitevents="true" 
-      smooth="true" 
+      url="marker.patt"
+      smooth="true"
       smoothCount="5"
-      raycaster="objects: .clickable"
-      cursor="fuse: false; rayOrigin: mouse;">
+      id="animated-marker">
       <a-entity 
-        gltf-model="url(model.glb)" 
-        class="clickable"
-        animation-mixer
+        gltf-model="url(model.glb)"
         scale="0.5 0.5 0.5"
         position="0 0 0"
-        rotation="-90 0 0">
+        rotation="-90 0 0"
+        animation-mixer>
       </a-entity>
     </a-marker>
 
-    <!-- กล้อง AR -->
     <a-entity camera></a-entity>
   </a-scene>
+
+  <script>
+    window.onload = function() {
+      const status = document.getElementById('status');
+      const guide = document.getElementById('guide');
+      const marker = document.querySelector('#animated-marker');
+
+      // เมื่อเจอมาร์คเกอร์
+      marker.addEventListener('markerFound', function() {
+        status.style.background = 'rgba(0, 255, 0, 0.7)';
+        status.textContent = 'พบมาร์คเกอร์แล้ว!';
+        guide.style.display = 'none';
+      });
+
+      // เมื่อมาร์คเกอร์หายไป
+      marker.addEventListener('markerLost', function() {
+        status.style.background = 'rgba(0, 0, 0, 0.7)';
+        status.textContent = 'กำลังค้นหามาร์คเกอร์...';
+        guide.style.display = 'block';
+      });
+    };
+  </script>
 </body>
 </html>
