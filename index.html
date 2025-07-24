@@ -106,7 +106,117 @@
 
   <!-- ส่วน Script ที่มีอยู่แล้ว -->
   <script>
-    // โค้ด JavaScript ที่มีอยู่เดิม
-  </script>
+    window.onload = function() {
+      const status = document.getElementById('status');
+      const guide = document.getElementById('guide');
+      const marker = document.querySelector('#animated-marker');
+      const modelUpload = document.getElementById('model-upload');
+      const modelInfo = document.getElementById('model-info');
+      const modelEntity = document.getElementById('model-entity');
+
+      // ตรวจสอบว่ามีการตั้งค่า CORS ถูกต้อง
+      AFRAME.registerComponent('model-handler', {
+        init: function() {
+          this.el.addEventListener('model-loaded', () => {
+            console.log('โมเดลโหลดสำเร็จ');
+            modelInfo.textContent = 'โหลดโมเดลสำเร็จ ✓';
+          });
+          this.el.addEventListener('model-error', (error) => {
+            console.error('เกิดข้อผิดพลาดในการโหลดโมเดล:', error);
+            modelInfo.textContent = 'เกิดข้อผิดพลาดในการโหลดโมเดล';
+          });
+        }
+      });
+
+      // เพิ่ม component ให้กับ entity
+      modelEntity.setAttribute('model-handler', '');
+
+      // จัดการการอัพโหลดไฟล์
+      modelUpload.addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+          // ตรวจสอบนามสกุลไฟล์
+          const fileExt = file.name.toLowerCase();
+          if (!fileExt.endsWith('.glb') && !fileExt.endsWith('.gltf')) {
+            alert('กรุณาเลือกไฟล์ .glb หรือ .gltf เท่านั้น');
+            return;
+          }
+
+          console.log('กำลังโหลดไฟล์:', file.name);
+          modelInfo.textContent = 'กำลังโหลดโมเดล...';
+
+          // สร้าง URL สำหรับไฟล์
+          const objectURL = URL.createObjectURL(file);
+          
+          // ลบโมเดลเก่า
+          modelEntity.removeAttribute('gltf-model');
+          
+          // รอสักครู่ก่อนโหลดโมเดลใหม่
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          // ตั้งค่าโมเดลใหม่
+          modelEntity.setAttribute('gltf-model', objectURL);
+          modelEntity.setAttribute('scale', '0.5 0.5 0.5');
+          modelEntity.setAttribute('rotation', '-90 0 0');
+          
+          console.log('ตั้งค่าโมเดลเรียบร้อย URL:', objectURL);
+
+        } catch (error) {
+          console.error('เกิดข้อผิดพลาด:', error);
+          modelInfo.textContent = 'เกิดข้อผิดพลาดในการโหลดไฟล์';
+        }
+      });
+
+      // เมื่อเจอ marker
+      marker.addEventListener('markerFound', function() {
+        console.log('เจอ marker');
+        status.textContent = 'พบ Marker!';
+        status.style.background = 'rgba(0, 255, 0, 0.7)';
+
+        // ตรวจสอบโมเดล
+        const currentModel = modelEntity.getAttribute('gltf-model');
+        console.log('โมเดลปัจจุบัน:', currentModel);
+      });
+
+      // เมื่อ marker หายไป
+      marker.addEventListener('markerLost', function() {
+        console.log('marker หายไป');
+        status.textContent = 'กำลังค้นหา Marker...';
+        status.style.background = 'rgba(0, 0, 0, 0.7)';
+      });
+
+      // เพิ่มปุ่มดีบัก
+      const debugBtn = document.createElement('button');
+      debugBtn.textContent = 'ตรวจสอบโมเดล';
+      debugBtn.style.cssText = `
+        position: fixed;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #ff4444;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 10px;
+        cursor: pointer;
+        z-index: 1001;
+      `;
+      
+      debugBtn.onclick = function() {
+        const model = modelEntity.getAttribute('gltf-model');
+        console.log('ข้อมูลโมเดล:', {
+          model: model,
+          position: modelEntity.getAttribute('position'),
+          rotation: modelEntity.getAttribute('rotation'),
+          scale: modelEntity.getAttribute('scale')
+        });
+        alert(model ? 'มีโมเดลอยู่: ' + model : 'ไม่พบโมเดล');
+      };
+      
+      document.body.appendChild(debugBtn);
+    };
+</script>
 </body>
 </html>
