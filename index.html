@@ -1,100 +1,112 @@
-<script>
-    window.onload = function() {
-      const status = document.getElementById('status');
-      const guide = document.getElementById('guide');
-      const marker = document.querySelector('#animated-marker');
-      const modelUpload = document.getElementById('model-upload');
-      const modelInfo = document.getElementById('model-info');
-      const modelEntity = document.getElementById('model-entity');
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR Scanner</title>
+  <!-- โหลด A-Frame -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <!-- โหลด AR.js -->
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <style>
+    /* กรอบสแกน */
+    .scan-frame {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 280px;
+      height: 280px;
+      border: 3px solid rgba(255, 255, 255, 0.8);
+      border-radius: 20px;
+      z-index: 1000;
+      pointer-events: none;
+      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.4);
+    }
 
-      // ตั้งค่าโมเดลเริ่มต้น (ถ้ามีไฟล์ model.glb อยู่)
-      modelEntity.setAttribute('gltf-model', 'model.glb');
+    .upload-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px 20px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+    }
 
-      // จัดการการอัพโหลดไฟล์
-      modelUpload.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-          // ตรวจสอบชนิดไฟล์
-          const fileExt = file.name.toLowerCase();
-          if (!fileExt.endsWith('.glb') && !fileExt.endsWith('.gltf')) {
-            alert('กรุณาเลือกไฟล์ .glb หรือ .gltf เท่านั้น');
-            return;
-          }
+    .upload-btn {
+      background: #00ff00;
+      color: black;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
 
-          console.log('เลือกไฟล์:', file.name);
-          modelInfo.textContent = `${file.name} (กำลังโหลด...)`;
-          
-          // สร้าง URL สำหรับไฟล์
-          const url = URL.createObjectURL(file);
-          console.log('URL ที่สร้าง:', url);
-          
-          // ลบ attribute เก่าก่อน
-          modelEntity.removeAttribute('gltf-model');
-          
-          // รอสักครู่แล้วตั้งค่าใหม่
-          setTimeout(() => {
-            modelEntity.setAttribute('gltf-model', url);
-            console.log('ตั้งค่าโมเดลแล้ว');
-          }, 200);
-        }
-      });
+    #model-info {
+      color: white;
+      margin-left: 10px;
+    }
 
-      // ฟังก์ชันเมื่อโมเดลโหลดสำเร็จ
-      modelEntity.addEventListener('model-loaded', function(e) {
-        console.log('โมเดลโหลดสำเร็จแล้ว!');
-        const currentText = modelInfo.textContent;
-        if (currentText.includes('กำลังโหลด')) {
-          modelInfo.textContent = currentText.replace('(กำลังโหลด...)', '✓ พร้อมใช้งาน');
-        }
-      });
+    #status {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body style="margin: 0; overflow: hidden;">
+  <!-- อัพโหลดโมเดล -->
+  <div class="upload-container">
+    <label class="upload-btn">
+      เลือกโมเดล 3D
+      <input type="file" id="model-upload" accept=".glb,.gltf" style="display: none;">
+    </label>
+    <span id="model-info">ยังไม่ได้เลือกไฟล์</span>
+  </div>
 
-      // ฟังก์ชันเมื่อเกิดข้อผิดพลาด
-      modelEntity.addEventListener('model-error', function(e) {
-        console.error('เกิดข้อผิดพลาดในการโหลดโมเดล:', e);
-        modelInfo.textContent = 'ข้อผิดพลาด: ไม่สามารถโหลดโมเดลได้';
-      });
+  <!-- กรอบสแกน -->
+  <div class="scan-frame"></div>
 
-      // เพิ่มการ Debug
-      marker.addEventListener('markerFound', function() {
-        console.log('พบมาร์คเกอร์แล้ว');
-        guide.parentElement.style.display = 'none';
-        status.textContent = 'พบมาร์คเกอร์แล้ว!';
-        status.parentElement.style.background = 'rgba(0, 255, 0, 0.7)';
-        
-        // ตรวจสอบว่าโมเดลมีอยู่หรือไม่
-        const hasModel = modelEntity.getAttribute('gltf-model');
-        console.log('โมเดลปัจจุบัน:', hasModel);
-      });
+  <!-- สถานะ -->
+  <div id="status">กำลังค้นหามาร์คเกอร์...</div>
 
-      marker.addEventListener('markerLost', function() {
-        console.log('มาร์คเกอร์หายไป');
-        guide.parentElement.style.display = 'flex';
-        status.textContent = 'กำลังค้นหามาร์คเกอร์...';
-        status.parentElement.style.background = 'rgba(0, 0, 0, 0.7)';
-      });
+  <!-- AR Scene -->
+  <a-scene 
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;"
+    renderer="logarithmicDepthBuffer: true;"
+    vr-mode-ui="enabled: false">
 
-      // เพิ่มปุ่มทดสอบโมเดล
-      const testBtn = document.createElement('button');
-      testBtn.textContent = 'ทดสอบโมเดล';
-      testBtn.style.cssText = `
-        position: fixed;
-        top: 160px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #ff4444;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 10px;
-        cursor: pointer;
-        z-index: 1001;
-      `;
-      testBtn.onclick = function() {
-        const currentModel = modelEntity.getAttribute('gltf-model');
-        console.log('โมเดลปัจจุบัน:', currentModel);
-        console.log('Element:', modelEntity);
-        alert(`โมเดลปัจจุบัน: ${currentModel || 'ไม่มี'}`);
-      };
-      document.body.appendChild(testBtn);
-    };
-</script>
+    <a-marker 
+      type="pattern"
+      url="marker.patt"
+      smooth="true"
+      smoothCount="5"
+      id="animated-marker">
+      
+      <a-entity
+        id="model-entity"
+        position="0 0 0"
+        rotation="-90 0 0"
+        scale="0.5 0.5 0.5">
+      </a-entity>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <!-- ส่วน Script ที่มีอยู่แล้ว -->
+  <script>
+    // โค้ด JavaScript ที่มีอยู่เดิม
+  </script>
+</body>
+</html>
