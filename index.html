@@ -1,191 +1,4 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-  <meta charset="UTF-8" />
-  <title>AR Scanner</title>
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-  <style>
-    /* กรอบสแกน */
-    .scan-frame {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 280px;
-      height: 280px;
-      border: 3px solid rgba(255, 255, 255, 0.8);
-      border-radius: 20px;
-      z-index: 1000;
-      pointer-events: none;
-      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.4);
-    }
-
-    /* มุมกรอบ */
-    .corner {
-      position: absolute;
-      width: 30px;
-      height: 30px;
-    }
-    .top-left {
-      top: -3px;
-      left: -3px;
-      border-left: 4px solid #00ff00;
-      border-top: 4px solid #00ff00;
-    }
-    .top-right {
-      top: -3px;
-      right: -3px;
-      border-right: 4px solid #00ff00;
-      border-top: 4px solid #00ff00;
-    }
-    .bottom-left {
-      bottom: -3px;
-      left: -3px;
-      border-left: 4px solid #00ff00;
-      border-bottom: 4px solid #00ff00;
-    }
-    .bottom-right {
-      bottom: -3px;
-      right: -3px;
-      border-right: 4px solid #00ff00;
-      border-bottom: 4px solid #00ff00;
-    }
-
-    /* สถานะการสแกน */
-    .top-container {
-      position: fixed;
-      top: 20px;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .bottom-container {
-      position: fixed;
-      bottom: 30px;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .status-box {
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 15px 30px;
-      border-radius: 30px;
-      font-size: 18px;
-      font-family: sans-serif;
-      transition: all 0.3s ease;
-    }
-
-    /* ปุ่มอัพโหลด */
-    .upload-container {
-      position: fixed;
-      top: 100px;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    .upload-box {
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-family: sans-serif;
-    }
-
-    .upload-box input[type="file"] {
-      display: none;
-    }
-
-    .upload-btn {
-      background: #00ff00;
-      color: black;
-      padding: 8px 16px;
-      border-radius: 15px;
-      cursor: pointer;
-      display: inline-block;
-      transition: all 0.3s ease;
-    }
-
-    .upload-btn:hover {
-      background: #00cc00;
-    }
-
-    #model-info {
-      margin-left: 10px;
-      font-size: 14px;
-    }
-  </style>
-</head>
-<body style="margin: 0; overflow: hidden;">
-  <!-- ข้อความด้านบน -->
-  <div class="top-container">
-    <div class="status-box">
-      <div id="guide">จัดให้อยู่ในกรอบ</div>
-    </div>
-  </div>
-
-  <!-- ปุ่มอัพโหลดไฟล์ -->
-  <div class="upload-container">
-    <div class="upload-box">
-      <label class="upload-btn">
-        เลือกโมเดล 3D
-        <input type="file" id="model-upload" accept=".glb,.gltf">
-      </label>
-      <span id="model-info">ยังไม่ได้เลือกไฟล์</span>
-    </div>
-  </div>
-
-  <!-- กรอบสแกน -->
-  <div class="scan-frame">
-    <div class="corner top-left"></div>
-    <div class="corner top-right"></div>
-    <div class="corner bottom-left"></div>
-    <div class="corner bottom-right"></div>
-  </div>
-
-  <!-- ข้อความด้านล่าง -->
-  <div class="bottom-container">
-    <div class="status-box">
-      <div id="status">กำลังค้นหามาร์คเกอร์...</div>
-    </div>
-  </div>
-
-  <!-- AR Scene -->
-  <a-scene 
-    embedded
-    vr-mode-ui="enabled: false"
-    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;">
-
-    <a-marker 
-      type="pattern" 
-      url="marker.patt"
-      smooth="true"
-      smoothCount="5"
-      id="animated-marker">
-      <a-entity 
-        id="model-entity"
-        scale="0.5 0.5 0.5"
-        position="0 0 0"
-        rotation="-90 0 0"
-        animation-mixer>
-      </a-entity>
-    </a-marker>
-
-    <a-entity camera></a-entity>
-  </a-scene>
-
-  <script>
+<script>
     window.onload = function() {
       const status = document.getElementById('status');
       const guide = document.getElementById('guide');
@@ -194,30 +7,94 @@
       const modelInfo = document.getElementById('model-info');
       const modelEntity = document.getElementById('model-entity');
 
+      // ตั้งค่าโมเดลเริ่มต้น (ถ้ามีไฟล์ model.glb อยู่)
+      modelEntity.setAttribute('gltf-model', 'model.glb');
+
       // จัดการการอัพโหลดไฟล์
       modelUpload.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
-          modelInfo.textContent = file.name;
+          // ตรวจสอบชนิดไฟล์
+          const fileExt = file.name.toLowerCase();
+          if (!fileExt.endsWith('.glb') && !fileExt.endsWith('.gltf')) {
+            alert('กรุณาเลือกไฟล์ .glb หรือ .gltf เท่านั้น');
+            return;
+          }
+
+          console.log('เลือกไฟล์:', file.name);
+          modelInfo.textContent = `${file.name} (กำลังโหลด...)`;
+          
+          // สร้าง URL สำหรับไฟล์
           const url = URL.createObjectURL(file);
-          modelEntity.setAttribute('gltf-model', url);
+          console.log('URL ที่สร้าง:', url);
+          
+          // ลบ attribute เก่าก่อน
+          modelEntity.removeAttribute('gltf-model');
+          
+          // รอสักครู่แล้วตั้งค่าใหม่
+          setTimeout(() => {
+            modelEntity.setAttribute('gltf-model', url);
+            console.log('ตั้งค่าโมเดลแล้ว');
+          }, 200);
         }
       });
 
-      // เมื่อเจอมาร์คเกอร์
+      // ฟังก์ชันเมื่อโมเดลโหลดสำเร็จ
+      modelEntity.addEventListener('model-loaded', function(e) {
+        console.log('โมเดลโหลดสำเร็จแล้ว!');
+        const currentText = modelInfo.textContent;
+        if (currentText.includes('กำลังโหลด')) {
+          modelInfo.textContent = currentText.replace('(กำลังโหลด...)', '✓ พร้อมใช้งาน');
+        }
+      });
+
+      // ฟังก์ชันเมื่อเกิดข้อผิดพลาด
+      modelEntity.addEventListener('model-error', function(e) {
+        console.error('เกิดข้อผิดพลาดในการโหลดโมเดล:', e);
+        modelInfo.textContent = 'ข้อผิดพลาด: ไม่สามารถโหลดโมเดลได้';
+      });
+
+      // เพิ่มการ Debug
       marker.addEventListener('markerFound', function() {
+        console.log('พบมาร์คเกอร์แล้ว');
         guide.parentElement.style.display = 'none';
         status.textContent = 'พบมาร์คเกอร์แล้ว!';
         status.parentElement.style.background = 'rgba(0, 255, 0, 0.7)';
+        
+        // ตรวจสอบว่าโมเดลมีอยู่หรือไม่
+        const hasModel = modelEntity.getAttribute('gltf-model');
+        console.log('โมเดลปัจจุบัน:', hasModel);
       });
 
-      // เมื่อมาร์คเกอร์หายไป
       marker.addEventListener('markerLost', function() {
+        console.log('มาร์คเกอร์หายไป');
         guide.parentElement.style.display = 'flex';
         status.textContent = 'กำลังค้นหามาร์คเกอร์...';
         status.parentElement.style.background = 'rgba(0, 0, 0, 0.7)';
       });
+
+      // เพิ่มปุ่มทดสอบโมเดล
+      const testBtn = document.createElement('button');
+      testBtn.textContent = 'ทดสอบโมเดล';
+      testBtn.style.cssText = `
+        position: fixed;
+        top: 160px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #ff4444;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 10px;
+        cursor: pointer;
+        z-index: 1001;
+      `;
+      testBtn.onclick = function() {
+        const currentModel = modelEntity.getAttribute('gltf-model');
+        console.log('โมเดลปัจจุบัน:', currentModel);
+        console.log('Element:', modelEntity);
+        alert(`โมเดลปัจจุบัน: ${currentModel || 'ไม่มี'}`);
+      };
+      document.body.appendChild(testBtn);
     };
-  </script>
-</body>
-</html>
+</script>
