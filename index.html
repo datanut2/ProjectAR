@@ -59,9 +59,15 @@
     
     <!-- Career container (แสดงเมื่อเลือกอาชีพ) - อยู่หน้ากล้องโดยตรง -->
     <a-entity camera position="0 1.6 0">
-      <a-entity id="career-container" position="0 0 -2.5" visible="false">
-        <a-entity id="career-model" position="0 0 0" scale="0.3 0.3 0.3"></a-entity>
-        <a-video id="career-video" position="0 -0.8 0" width="1" height="0.5625" loop muted></a-video>
+      <a-entity id="career-container" position="0 -0.5 -3" visible="false">
+        <!-- พื้นหลังเพื่อให้เห็นขอบเขต -->
+        <a-box position="0 0 -0.1" width="4" height="3" depth="0.1" material="color: #333; opacity: 0.3"></a-box>
+        <!-- โมเดล -->
+        <a-entity id="career-model" position="0 0.5 0" scale="0.15 0.15 0.15" rotation="0 45 0"></a-entity>
+        <!-- วิดีโอ -->
+        <a-video id="career-video" position="0 -1 0" width="2" height="1.125" rotation="0 0 0"></a-video>
+        <!-- ข้อความแสดงสถานะ -->
+        <a-text id="career-status" position="0 -2 0" value="Career Content Loading..." align="center" color="white" width="4"></a-text>
       </a-entity>
     </a-entity>
     <a-entity light="type: ambient; intensity:0.6"></a-entity>
@@ -79,6 +85,7 @@
       const careerContainer = document.getElementById('career-container');
       const careerModel = document.getElementById('career-model');
       const careerVideo = document.getElementById('career-video');
+      const careerStatus = document.getElementById('career-status');
       const voice = document.getElementById('voice');
       const sideVideo = document.getElementById('side-video');
       const careerBtn = document.getElementById('career-btn');
@@ -240,6 +247,7 @@
           // แสดง career container และซ่อน marker container
           careerContainer.setAttribute('visible', 'true');
           markerContainer.setAttribute('visible', 'false');
+          careerStatus.setAttribute('value', `Loading ${careerName}...`);
           console.log('แสดง career container แล้ว');
           
           // กำหนดไฟล์ตามอาชีพ
@@ -298,23 +306,35 @@
               careerModel.setAttribute('gltf-model', modelRef);
               careerModel.setAttribute('animation-mixer', '');
               careerModel.setAttribute('visible', 'true');
-              careerModel.setAttribute('scale', '0.5 0.5 0.5'); // ขยายขนาดให้เห็นชัดขึ้น
-              careerModel.setAttribute('position', '0 0.2 0'); // ยกขึ้นมาหน่อย
-              careerModel.setAttribute('rotation', '0 0 0');
+              careerModel.setAttribute('scale', '0.15 0.15 0.15'); // ลดขนาดให้เล็กลง
+              careerModel.setAttribute('position', '0 0.5 0'); // ยกขึ้นมาให้เห็นทั้งตัว
+              careerModel.setAttribute('rotation', '0 45 0'); // หมุนเล็กน้อยเพื่อให้เห็นมุม
               
               // ตั้งค่าวิดีโอใหม่
               console.log('ตั้งค่าวิดีโอ...', videoRef);
-              careerVideo.setAttribute('material', `src: ${videoRef}; side: double; transparent: false; shader: flat`);
+              careerVideo.setAttribute('material', `src: ${videoRef}; side: double; transparent: false; shader: flat; alphaTest: 0.1`);
               careerVideo.setAttribute('visible', 'true');
-              careerVideo.setAttribute('width', '1.5'); // ขยายขนาดให้เห็นชัดขึ้น
-              careerVideo.setAttribute('height', '0.84');
-              careerVideo.setAttribute('position', '0 -1.2 0'); // ลดลงมาให้เห็นชัด
+              careerVideo.setAttribute('width', '2'); // ขนาดวิดีโอ
+              careerVideo.setAttribute('height', '1.125');
+              careerVideo.setAttribute('position', '0 -1 0'); // ใต้โมเดล
               careerVideo.setAttribute('rotation', '0 0 0');
+              
+              // เพิ่มการตรวจสอบวิดีโอ
+              const videoAsset = document.querySelector('#career-video-asset');
+              if (videoAsset) {
+                console.log('Video asset พบ:', videoAsset.src);
+                console.log('Video ready state:', videoAsset.readyState);
+                // บังคับให้วิดีโอโหลด
+                videoAsset.load();
+              } else {
+                console.error('ไม่พบ video asset');
+              }
               
               // แสดงข้อมูล debug
               console.log('Career Model Position:', careerModel.getAttribute('position'));
               console.log('Career Video Position:', careerVideo.getAttribute('position'));
               console.log('Career Container Visible:', careerContainer.getAttribute('visible'));
+              console.log('Career Container Position:', careerContainer.getAttribute('position'));
               
               // บังคับให้ A-Frame อัพเดต
               careerModel.flushToDOM();
@@ -330,8 +350,26 @@
                 // เล่นวิดีโอก่อน
                 const videoElement = document.querySelector('#career-video-asset');
                 if (videoElement) {
+                  console.log('กำลังเล่นวิดีโอ:', videoElement.src);
                   videoElement.currentTime = 0;
-                  videoElement.play().catch(e => console.warn('ไม่สามารถเล่นวิดีโอได้:', e));
+                  videoElement.muted = true; // ตั้งให้เป็น muted เผื่อปัญหา autoplay
+                  videoElement.loop = true;
+                  videoElement.play().then(() => {
+                    console.log('วิดีโอเล่นสำเร็จ');
+                    // พยายามแสดงวิดีโอบน A-Frame
+                    careerVideo.setAttribute('material', `src: ${videoRef}; side: double; transparent: false`);
+                    careerVideo.setAttribute('geometry', 'primitive: plane');
+                  }).catch(e => {
+                    console.warn('ไม่สามารถเล่นวิดีโอได้:', e);
+                    // ลองใช้ static image แทน
+                    careerVideo.setAttribute('material', 'color: #FF0000');
+                    careerVideo.setAttribute('text', 'value: VIDEO NOT LOADED; color: white; align: center;');
+                  });
+                } else {
+                  console.error('ไม่พบ video element');
+                  // แสดง placeholder
+                  careerVideo.setAttribute('material', 'color: #00FF00');
+                  careerVideo.setAttribute('text', 'value: VIDEO PLACEHOLDER; color: black; align: center;');
                 }
                 
                 // เล่นเสียง
@@ -342,7 +380,8 @@
                 // อัพเดตสถานะสุดท้าย
                 status.textContent = `แสดง: ${careerName} เสร็จแล้ว`;
                 status.style.background = 'rgba(0,255,0,0.7)';
-              }, 1000);
+                careerStatus.setAttribute('value', `${careerName} Ready!`);
+              }, 1500); // เพิ่มเวลารอ
               
             }, 500);
             
