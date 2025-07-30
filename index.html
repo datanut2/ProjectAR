@@ -49,7 +49,7 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">11กำลังค้นหา Hiro Marker...</div>
+  <div id="status">กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
 
   <!-- เมนูเลือกอาชีพ -->
@@ -143,6 +143,14 @@
         setTimeout(() => { voice.currentTime = 0; voice.play().catch(e => console.warn(e)); }, 1000);
       });
 
+      // markerLost
+      marker.addEventListener('markerLost', () => {
+        status.textContent = 'กำลังค้นหา Hiro Marker...';
+        status.style.background = 'rgba(0,0,0,0.7)';
+        scanFrame.style.display = 'block';
+        fixedCont.setAttribute('visible', 'false');
+      });
+
             // คลิกที่โมเดล ผ่าน event ของ a-scene
       arScene.addEventListener('click', (e) => {
         const clicked = e.detail.intersectedEl;
@@ -162,6 +170,7 @@
           alert('คุณเลือก: ' + btn.getAttribute('data-career'));
         });
       });
+    };
   </script>
 </body>
 </html>
