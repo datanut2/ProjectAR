@@ -69,30 +69,33 @@
         if(mixer){ mixer.mixer.setTime(0); mixer.play(); }
 
         if(!anchored){
-          modelOrigin.setAttribute('visible','false');
-          videoOrigin.setAttribute('visible','false');
-          // clone video full screen behind
-          const cloneVideo = videoOrigin.cloneNode(true);
-          cloneVideo.removeAttribute('id');
-          cloneVideo.setAttribute('visible','true');
-          // position facing camera
-          cloneVideo.setAttribute('rotation','0 0 0');
-          cloneVideo.setAttribute('position','0 0 -1');
-          cloneVideo.setAttribute('width','1.6');
-          cloneVideo.setAttribute('height','2.84'); // taller
-          // clone model front-right
-          const cloneModel = modelOrigin.cloneNode(true);
-          cloneModel.removeAttribute('id');
-          cloneModel.setAttribute('visible','true');
-          cloneModel.setAttribute('rotation','0 180 0');
-          cloneModel.setAttribute('position','0.6 -0.2 -0.9');
-          cloneModel.setAttribute('scale','0.6 0.6 0.6');
+  modelOrigin.setAttribute('visible','false');
+  videoOrigin.setAttribute('visible','false');
 
-          cameraWrap.appendChild(cloneVideo);
-          cameraWrap.appendChild(cloneModel);
-          anchored = true;
-        }
-      });
+  const cloneVideo = videoOrigin.cloneNode(true);
+  cloneVideo.removeAttribute('id');
+  cloneVideo.setAttribute('visible','true');
+  cloneVideo.setAttribute('rotation','0 0 0');
+  cloneVideo.setAttribute('position','0 0 -2');
+  cloneVideo.setAttribute('width','1.6');
+  cloneVideo.setAttribute('height','2.84');
+
+  const cloneModel = modelOrigin.cloneNode(true);
+  cloneModel.removeAttribute('id');
+  cloneModel.setAttribute('visible','true');
+  cloneModel.setAttribute('rotation','0 180 0');
+  cloneModel.setAttribute('position','0.6 -0.3 -1.9');
+  cloneModel.setAttribute('scale','0.8 0.8 0.8');
+
+  cameraWrap.appendChild(cloneVideo);
+  cameraWrap.appendChild(cloneModel);
+
+  // เล่นเสียงหลังแสดงแล้ว
+  voice.currentTime = 0;
+  voice.play().catch(()=>{});
+
+  anchored = true;
+}
 
       marker.addEventListener('markerLost', () => {
         status.textContent = 'กำลังค้นหา Hiro Marker...';
