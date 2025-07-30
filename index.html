@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AR Scanner with Animated GLB</title>
+  <title>AR Scanner with Menu</title>
   <!-- A-Frame core -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <!-- A-Frame Extras (animation-mixer) -->
@@ -13,76 +13,80 @@
   <style>
     .scan-frame {
       position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
       width: 280px; height: 280px;
       border: 3px solid rgba(255,255,255,0.8);
       border-radius: 20px;
       box-shadow: 0 0 0 4000px rgba(0,0,0,0.4);
-      display: none;
-      z-index: 1000;
-      pointer-events: none;
+      display: none; z-index: 1000; pointer-events: none;
     }
     #status {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: 20px;
-      display: none;
-      z-index: 1000;
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.7); color: #fff;
+      padding: 10px 20px; border-radius: 20px;
+      display: none; z-index: 1000;
     }
     #unlock {
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.8);
-      color: #fff;
-      padding: 15px 30px;
-      border-radius: 10px;
-      font-size: 1.2em;
-      z-index: 1001;
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8); color: #fff;
+      padding: 15px 30px; border-radius: 10px;
+      font-size: 1.2em; z-index: 1001;
+    }
+    /* เมนูเลือกอาชีพ */
+    #career-menu {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.85); padding: 20px; border-radius: 10px;
+      display: none; z-index: 1002; color: #fff;
+    }
+    #career-menu h3 { margin-top: 0; }
+    #career-menu button {
+      display: block; width: 200px; margin: 10px auto;
+      padding: 10px; font-size: 1em;
+      border: none; border-radius: 5px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">กำลังค้นหา Hiro Marker...</div>
+  <div id="status">222กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
+
+  <!-- เมนูเลือกอาชีพ -->
+  <div id="career-menu">
+    <h3>เลือกสายงาน</h3>
+    <button data-career="Network Security">Network Security</button>
+    <button data-career="Cloud Engineer">Cloud Engineer</button>
+    <button data-career="AI Engineer">AI Engineer</button>
+    <button data-career="Data Center">Data Center</button>
+    <button id="close-menu">ปิด</button>
+  </div>
 
   <audio id="voice" src="voice.mp3" preload="auto"></audio>
   <video id="side-video" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous" style="display:none;"></video>
 
   <a-scene id="ar-scene"
-           embedded
-           vr-mode-ui="enabled:false"
+           embedded vr-mode-ui="enabled:false"
            renderer="logarithmicDepthBuffer:true"
            arjs="sourceType: webcam; debugUIEnabled: false;"
            style="visibility:hidden;">
 
-    <!-- Preload assets -->
     <a-assets>
-      <!-- ให้ไฟล์โมเดลใหม่ชื่อ model.glb วางไว้ที่เดียวกับ HTML -->
       <a-asset-item id="animated-model" src="model.glb"></a-asset-item>
     </a-assets>
 
-    <!-- marker detector -->
     <a-marker preset="hiro" id="hiro-marker"></a-marker>
 
-    <!-- camera + fixed container -->
     <a-entity id="camera-wrapper" camera position="0 1.6 0">
       <a-entity id="fixed-container" visible="false">
-        <!-- entity โมเดล ใช้ asset-item และ animation-mixer -->
         <a-entity id="model-entity"
                   gltf-model="#animated-model"
                   animation-mixer
+                  raycaster="objects: .clickable"
+                  class="clickable"
                   position="0 0 -2.5"
                   scale="0.3 0.3 0.3">
         </a-entity>
-        <!-- วิดีโอ ด้านล่างโมเดล -->
         <a-video id="video-entity"
                  src="#side-video"
                  position="0 -0.8 -2.5"
@@ -95,6 +99,11 @@
     <!-- แสงสว่างเสริม -->
     <a-entity light="type: ambient; intensity: 0.6"></a-entity>
     <a-entity light="type: directional; intensity: 0.8" position="-1 1 0"></a-entity>
+
+    <!-- cursor สำหรับคลิก -->
+    <a-entity cursor="fuse: false; rayOrigin: mouse"
+              raycaster="objects: .clickable">
+    </a-entity>
   </a-scene>
 
   <script>
@@ -105,8 +114,11 @@
       const arScene = document.getElementById('ar-scene');
       const marker = document.getElementById('hiro-marker');
       const fixedCont = document.getElementById('fixed-container');
+      const modelEnt = document.getElementById('model-entity');
       const voice = document.getElementById('voice');
       const sideVideo = document.getElementById('side-video');
+      const menu = document.getElementById('career-menu');
+      const closeBtn = document.getElementById('close-menu');
 
       // ปลดล็อค media
       const startAR = () => {
@@ -120,26 +132,32 @@
       };
       document.body.addEventListener('click', startAR);
 
-      // เมื่อเจอ marker
+      // markerFound
       marker.addEventListener('markerFound', () => {
         status.textContent = 'พบ Hiro Marker!';
         status.style.background = 'rgba(0,255,0,0.7)';
         scanFrame.style.display = 'none';
-
-        // แสดงโมเดล+วิดีโอ
         fixedCont.setAttribute('visible', 'true');
         sideVideo.currentTime = 0;
-        sideVideo.play().catch(e => console.warn('Video play error:', e));
-        setTimeout(() => {
-          voice.currentTime = 0;
-          voice.play().catch(e => console.warn('Audio play error:', e));
-        }, 1000);
+        sideVideo.play().catch(e => console.warn(e));
+        setTimeout(() => { voice.currentTime = 0; voice.play().catch(e => console.warn(e)); }, 1000);
       });
 
-      // เมื่อ marker หาย ไม่ซ่อนโมเดล+วิดีโอ
-      marker.addEventListener('markerLost', () => {
-        status.textContent = 'กำลังค้นหา Hiro Marker...';
-        status.style.background = 'rgba(0,0,0,0.7)';
+      // คลิกที่โมเดล
+      modelEnt.addEventListener('click', () => {
+        menu.style.display = 'block';
+      });
+
+      // ปิดเมนู
+      closeBtn.addEventListener('click', () => {
+        menu.style.display = 'none';
+      });
+
+      // ปุ่มเลือกอาชีพ
+      menu.querySelectorAll('button[data-career]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          alert('คุณเลือก: ' + btn.getAttribute('data-career'));
+        });
       });
     };
   </script>
