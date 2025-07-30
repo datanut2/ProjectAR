@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Scanner - Hiro Test</title>
+  <title>AR Scanner - Hiro Centered</title>
   <!-- โหลด A-Frame -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <!-- โหลด AR.js -->
@@ -12,127 +12,63 @@
     /* กรอบสแกน */
     .scan-frame {
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 280px;
-      height: 280px;
-      border: 3px solid rgba(255, 255, 255, 0.8);
-      border-radius: 20px;
-      z-index: 1000;
-      pointer-events: none;
-      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.4);
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 280px; height: 280px;
+      border: 3px solid rgba(255,255,255,0.8);
+      border-radius: 20px; z-index:1000;
+      pointer-events:none;
+      box-shadow:0 0 0 4000px rgba(0,0,0,0.4);
       display: none; /* ซ่อนก่อนปลดล็อก */
     }
     #status {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      z-index: 1000;
+      position: fixed; bottom:20px; left:50%; transform:translateX(-50%);
+      background:rgba(0,0,0,0.7); color:#fff;
+      padding:10px 20px; border-radius:20px; z-index:1000;
       display: none; /* ซ่อนก่อนปลดล็อก */
     }
     #unlock {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 15px 30px;
-      border-radius: 10px;
-      font-size: 1.2em;
-      z-index: 1001;
+      position: fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+      background:rgba(0,0,0,0.8); color:#fff;
+      padding:15px 30px; border-radius:10px;
+      font-size:1.2em; z-index:1001;
     }
   </style>
 </head>
-<body style="margin: 0; overflow: hidden;">
-  <!-- กรอบสแกน -->
+<body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <!-- สถานะ -->
   <div id="status">กำลังค้นหา Hiro Marker...</div>
-
-  <!-- ปุ่มแตะเพื่อปลดล็อกเสียง และเริ่มสแกน -->
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
-  <!-- audio element -->
   <audio id="voice" src="voice.mp3" preload="auto"></audio>
+  <video id="side-video" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous" style="display:none;"></video>
 
-  <!-- วิดีโอแยกไว้ใต้ body เพื่อใช้เป็น texture ใน <a-video> -->
-  <video id="side-video"
-         src="career-video.mp4"
-         preload="auto"
-         loop
-         muted
-         playsinline
-         crossorigin="anonymous"
-         style="display: none;"></video>
-
-  <!-- AR Scene -->
-  <a-scene id="ar-scene"
-    embedded
-    arjs="sourceType: webcam; debugUIEnabled: false;"
-    renderer="logarithmicDepthBuffer: true;"
-    vr-mode-ui="enabled: false"
-    style="visibility: hidden;">
-
-    <!-- ใช้ Hiro Marker -->
-    <a-marker 
-      preset="hiro"
-      id="hiro-marker"
-      smooth="true"
-      smoothCount="5">
-      
-      <!-- วิดีโอแนวตั้ง อยู่ด้านหลังโมเดล (z = -0.5) -->
-      <a-video 
-        id="video-entity"
-        src="#side-video"
-        position="0 0 -0.5"
-        rotation="-90 0 0"
-        width="1"
-        height="1.78"
-        autoplay
-        loop
-        muted
-        visible="false"></a-video>
-
-      <!-- โมเดล 3D ขยับมาเล็กน้อยให้มาด้านหน้า (z = 0.1) -->
-      <a-entity
-        id="model-entity"
-        gltf-model="model.glb"
-        position="0 0 0.1"
-        rotation="-90 0 0"
-        scale="0.5 0.5 0.5"
-        animation-mixer
-        visible="false"></a-entity>
-
+  <a-scene id="ar-scene" embedded arjs="sourceType:webcam;debugUIEnabled:false;" renderer="logarithmicDepthBuffer:true;" vr-mode-ui="enabled:false" style="visibility:hidden;">
+    <!-- Marker and hidden entities -->
+    <a-marker preset="hiro" id="hiro-marker" smooth="true" smoothCount="5">
+      <a-video id="video-entity" src="#side-video" position="0 0 -0.5" rotation="-90 0 0" width="1" height="1.78" autoplay loop muted visible="false"></a-video>
+      <a-entity id="model-entity" gltf-model="model.glb" position="0 0 0.1" rotation="-90 0 0" scale="0.5 0.5 0.5" animation-mixer visible="false"></a-entity>
     </a-marker>
-
-    <!-- กล้อง -->
-    <a-entity camera></a-entity>
+    <!-- Camera wrapper for centered display -->
+    <a-entity id="camera-wrapper" camera></a-entity>
   </a-scene>
 
   <script>
     window.onload = () => {
-      const unlockBtn   = document.getElementById('unlock');
-      const scanFrame   = document.querySelector('.scan-frame');
-      const status      = document.getElementById('status');
-      const arScene     = document.getElementById('ar-scene');
-      const marker      = document.getElementById('hiro-marker');
-      const modelEntity = document.getElementById('model-entity');
-      const videoEntity = document.getElementById('video-entity');
-      const voice       = document.getElementById('voice');
-      const sideVideo   = document.getElementById('side-video');
+      const unlockBtn    = document.getElementById('unlock');
+      const scanFrame    = document.querySelector('.scan-frame');
+      const status       = document.getElementById('status');
+      const arScene      = document.getElementById('ar-scene');
+      const marker       = document.getElementById('hiro-marker');
+      const modelOrigin  = document.getElementById('model-entity');
+      const videoOrigin  = document.getElementById('video-entity');
+      const cameraWrap   = document.getElementById('camera-wrapper');
+      const voice        = document.getElementById('voice');
+      const sideVideo    = document.getElementById('side-video');
+      let anchored = false;
 
-      // เมื่อกดปุ่ม unlock ให้แสดง AR และกรอบสแกน
+      // เริ่ม AR หลัง unlock
       const startAR = () => {
-        // ปลดล็อกเสียง & วิดีโอ
-        voice.play().then(()=> voice.pause());
-        sideVideo.play().then(()=> sideVideo.pause());
-        // แสดง UI
+        voice.play().then(()=>voice.pause());
+        sideVideo.play().then(()=>sideVideo.pause());
         unlockBtn.style.display = 'none';
         scanFrame.style.display = 'block';
         status.style.display    = 'block';
@@ -141,26 +77,40 @@
       };
       document.body.addEventListener('click', startAR);
 
-      // เมื่อเจอ Hiro Marker
+      // เมื่อเจอ Marker
       marker.addEventListener('markerFound', () => {
         status.textContent = 'พบ Hiro Marker!';
-        status.style.background = 'rgba(0, 255, 0, 0.7)';
+        status.style.background = 'rgba(0,255,0,0.7)';
+        scanFrame.style.display = 'none';
+
         // เล่นเสียง & วิดีโอ
         voice.currentTime = 0; voice.play().catch(()=>{});
         sideVideo.currentTime = 0; sideVideo.play().catch(()=>{});
-        // แสดงโมเดลและวิดีโอ
-        modelEntity.setAttribute('visible', 'true');
-        videoEntity.setAttribute('visible', 'true');
+
         // เริ่มแอนิเมชัน
-        const mixer = modelEntity.components['animation-mixer'];
+        const mixer = modelOrigin.components['animation-mixer'];
         if (mixer) { mixer.mixer.setTime(0); mixer.play(); }
+
+        // แสดงและย้ายไปกลางกล้อง ครั้งเดียว
+        if (!anchored) {
+          const modelClone = modelOrigin.cloneNode(true);
+          const videoClone = videoOrigin.cloneNode(true);
+          modelClone.removeAttribute('id'); videoClone.removeAttribute('id');
+          modelClone.setAttribute('visible', 'true');
+          videoClone.setAttribute('visible', 'true');
+          modelClone.setAttribute('position', '0 0 -1');
+          videoClone.setAttribute('position', '0 -0.5 -1');
+          cameraWrap.appendChild(videoClone);
+          cameraWrap.appendChild(modelClone);
+          anchored = true;
+        }
       });
 
       // เมื่อ Marker หาย
       marker.addEventListener('markerLost', () => {
         status.textContent = 'กำลังค้นหา Hiro Marker...';
-        status.style.background = 'rgba(0, 0, 0, 0.7)';
-        // ไม่ซ่อนเสียงหรือสื่ออื่น ใบ้ค้าง
+        status.style.background = 'rgba(0,0,0,0.7)';
+        // scanFrame ถูกซ่อนแล้ว ไม่เอากลับ
       });
     };
   </script>
