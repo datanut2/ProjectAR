@@ -273,8 +273,11 @@
         setTimeout(async () => {
           console.log('เริ่มแสดงอาชีพใหม่...');
           
-          // ซ่อน marker container ก่อน
+          // แสดง career container และซ่อน marker container
+          careerContainer.setAttribute('visible', 'true');
           markerContainer.setAttribute('visible', 'false');
+          careerStatus.setAttribute('value', `Loading ${careerName}...`);
+          console.log('แสดง career container แล้ว');
           
           // กำหนดไฟล์ตามอาชีพ
           let modelSrc, videoSrc, audioSrc;
@@ -301,44 +304,32 @@
               return;
               
             case 'Network Security':
+              modelSrc = 'network-model.glb';
+              videoSrc = 'video-network.mp4';
+              audioSrc = 'voice-network.mp3';
+              break;
             case 'Cloud Engineer':
+              modelSrc = 'cloud-model.glb';
+              videoSrc = 'video-cloud.mp4';
+              audioSrc = 'voice-cloud.mp3';
+              break;
             case 'AI Engineer':
+              modelSrc = 'ai-model.glb';
+              videoSrc = 'video-ai.mp4';
+              audioSrc = 'voice-ai.mp3';
+              break;
             case 'Data Center':
-              // สำหรับอาชีพอื่น ให้ซ่อนทุกอย่าง
-              careerContainer.setAttribute('visible', 'false');
-              markerContainer.setAttribute('visible', 'false');
-              
-              // หยุดเสียงทั้งหมด
-              stopAllMedia();
-              
-              // แสดงข้อความว่าซ่อนแล้ว
-              status.textContent = `ซ่อน: ${careerName} - โมเดล/วิดีโอ/เสียงหายไป`;
-              status.style.background = 'rgba(255,0,0,0.7)';
-              scanFrame.style.display = 'none';
-              
-              console.log(`ซ่อนเนื้อหาสำหรับ: ${careerName}`);
-              return;
-        }
-        
-        // ถ้าเป็น Test Model ให้แสดง marker content
-        markerContainer.setAttribute('visible', 'true');
-        careerContainer.setAttribute('visible', 'false');
-        
-        status.textContent = 'แสดง: เนื้อหาพื้นฐาน';
-        status.style.background = 'rgba(0,255,0,0.7)';
-        scanFrame.style.display = 'none';
-        
-        // เล่นสื่อหลัก
-        sideVideo.currentTime = 0;
-        sideVideo.play().catch(e => console.warn('ไม่สามารถเล่นวิดีโอได้:', e));
-        
-        setTimeout(() => {
-          voice.currentTime = 0;
-          voice.play().catch(e => console.warn('ไม่สามารถเล่นเสียงได้:', e));
-        }, 1000);
-        
-        }, 300); // รอให้การล้างเสร็จสิ้น
-      };
+              modelSrc = 'dc-model.glb';
+              videoSrc = 'video-dc.mp4';
+              audioSrc = 'voice-dc.mp3';
+              break;
+            default:
+              modelSrc = 'model.glb';
+              videoSrc = 'career-video.mp4';
+              audioSrc = 'voice.mp3';
+          }
+          
+          console.log('โหลดไฟล์ใหม่:', { modelSrc, videoSrc, audioSrc });
           
           try {
             // โหลด assets ใหม่และรอให้เสร็จ
