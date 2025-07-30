@@ -24,7 +24,7 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">กำลังค้นหา Hiro Marker...</div>
+  <div id="status">1กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
   <!-- ปุ่มอาชีพ -->
   <button id="career-btn">อาชีพที่น่าสนใจ</button>
@@ -130,29 +130,60 @@
         }
       });
 
-      // ฟังก์ชันโหลดไฟล์แบบ Dynamic
+      // ฟังก์ชันโหลดไฟล์แบบ Dynamic (ปรับปรุงให้โหลดใหม่ทุกครั้ง)
       function loadAssetDynamic(assetId, src) {
         const assets = document.querySelector('a-assets');
-        let asset = document.getElementById(assetId);
         
-        if (!asset) {
-          if (src.endsWith('.glb')) {
-            asset = document.createElement('a-asset-item');
-            asset.setAttribute('id', assetId);
-            asset.setAttribute('src', src);
-          } else if (src.endsWith('.mp4')) {
-            asset = document.createElement('video');
-            asset.setAttribute('id', assetId);
-            asset.setAttribute('src', src);
-            asset.setAttribute('preload', 'auto');
-            asset.setAttribute('loop', '');
-            asset.setAttribute('muted', '');
-            asset.setAttribute('playsinline', '');
-            asset.setAttribute('crossorigin', 'anonymous');
-          }
-          assets.appendChild(asset);
+        // ลบ asset เก่าถ้ามี
+        let oldAsset = document.getElementById(assetId);
+        if (oldAsset) {
+          oldAsset.remove();
+          console.log('ลบ asset เก่า:', assetId);
         }
-        return `#${assetId}`;
+        
+        // สร้าง asset ใหม่
+        let asset;
+        if (src.endsWith('.glb')) {
+          asset = document.createElement('a-asset-item');
+          asset.setAttribute('id', assetId);
+          asset.setAttribute('src', src);
+        } else if (src.endsWith('.mp4')) {
+          asset = document.createElement('video');
+          asset.setAttribute('id', assetId);
+          asset.setAttribute('src', src);
+          asset.setAttribute('preload', 'auto');
+          asset.setAttribute('loop', '');
+          asset.setAttribute('muted', '');
+          asset.setAttribute('playsinline', '');
+          asset.setAttribute('crossorigin', 'anonymous');
+        }
+        
+        if (asset) {
+          assets.appendChild(asset);
+          console.log('สร้าง asset ใหม่:', assetId, 'src:', src);
+          
+          // รอให้โหลดเสร็จ
+          return new Promise((resolve) => {
+            if (asset.tagName === 'VIDEO') {
+              asset.addEventListener('loadeddata', () => resolve(`#${assetId}`), { once: true });
+              asset.addEventListener('error', () => {
+                console.error('โหลดวิดีโอไม่สำเร็จ:', src);
+                resolve(`#${assetId}`);
+              }, { once: true });
+            } else {
+              asset.addEventListener('loaded', () => resolve(`#${assetId}`), { once: true });
+              asset.addEventListener('error', () => {
+                console.error('โหลดโมเดลไม่สำเร็จ:', src);
+                resolve(`#${assetId}`);
+              }, { once: true });
+            }
+            
+            // Timeout เผื่อโหลดไม่สำเร็จ
+            setTimeout(() => resolve(`#${assetId}`), 3000);
+          });
+        }
+        
+        return Promise.resolve(`#${assetId}`);
       }
 
       // ฟังก์ชันหยุดสื่อทั้งหมด
@@ -171,7 +202,55 @@
           careerVideoEl.components.material.material.map.image.pause();
         }
         
+        // หยุดวิดีโอจาก marker
+        const markerVideoEl = document.querySelector('#video-entity');
+        if (markerVideoEl && markerVideoEl.components && markerVideoEl.components.material && markerVideoEl.components.material.material.map) {
+          markerVideoEl.components.material.material.map.image.pause();
+        }
+        
         console.log('หยุดสื่อทั้งหมดแล้ว');
+      }
+
+      // ฟังก์ชันลบ cache และ elements เก่า
+      function clearAllCache() {
+        // ซ่อน marker container (โมเดลจาก Hiro marker)
+        markerContainer.setAttribute('visible', 'false');
+        
+        // ลบ gltf-model จาก career model
+        careerModel.removeAttribute('gltf-model');
+        careerModel.removeAttribute('animation-mixer');
+        
+        // ลบ src จาก career video
+        careerVideo.removeAttribute('src');
+        
+        // ลบ assets เก่าออกจาก A-Frame cache
+        const assets = document.querySelector('a-assets');
+        const oldAssets = assets.querySelectorAll('[id^="career-"]');
+        oldAssets.forEach(asset => {
+          console.log('ลบ asset:', asset.id);
+          asset.remove();
+        });
+        
+        // Clear A-Frame cache
+        if (AFRAME.utils && AFRAME.utils.srcLoader && AFRAME.utils.srcLoader.cache) {
+          Object.keys(AFRAME.utils.srcLoader.cache).forEach(key => {
+            if (key.includes('career-') || key.includes('model') || key.includes('video')) {
+              delete AFRAME.utils.srcLoader.cache[key];
+              console.log('ลบ cache:', key);
+            }
+          });
+        }
+        
+        // Clear texture cache
+        if (AFRAME.utils.material && AFRAME.utils.material.textureCache) {
+          Object.keys(AFRAME.utils.material.textureCache).forEach(key => {
+            if (key.includes('career-') || key.includes('model') || key.includes('video')) {
+              delete AFRAME.utils.material.textureCache[key];
+            }
+          });
+        }
+        
+        console.log('ล้าง cache ทั้งหมดแล้ว');
       }
 
       // ฟังก์ชันเปลี่ยนอาชีพ - แสดงกลางจอโดยไม่ต้องสแกน
@@ -181,59 +260,66 @@
         // หยุดสื่อเก่าทั้งหมดก่อน
         stopAllMedia();
         
-        // แสดง career container (โมเดลจากปุ่ม)
-        careerContainer.setAttribute('visible', 'true');
+        // ล้างแคชและซ่อนโมเดลเก่าทั้งหมด (รวมถึง model.glb จาก marker)
+        clearAllCache();
         
-        // กำหนดไฟล์ตามอาชีพที่ถูกต้อง
-        let modelSrc, videoSrc, audioSrc;
-        
-        switch(careerName) {
-          case 'Network Security':
-            modelSrc = loadAssetDynamic('career-network-model', 'network-model.glb');
-            videoSrc = loadAssetDynamic('career-network-video', 'video-network.mp4');
-            audioSrc = 'voice-network.mp3';
-            break;
-          case 'Cloud Engineer':
-            modelSrc = loadAssetDynamic('career-cloud-model', 'cloud-model.glb');
-            videoSrc = loadAssetDynamic('career-cloud-video', 'video-cloud.mp4');
-            audioSrc = 'voice-cloud.mp3';
-            break;
-          case 'AI Engineer':
-            modelSrc = loadAssetDynamic('career-ai-model', 'ai-model.glb');
-            videoSrc = loadAssetDynamic('career-ai-video', 'video-ai.mp4');
-            audioSrc = 'voice-ai.mp3';
-            break;
-          case 'Data Center':
-            modelSrc = loadAssetDynamic('career-dc-model', 'dc-model.glb');
-            videoSrc = loadAssetDynamic('career-dc-video', 'video-dc.mp4');
-            audioSrc = 'voice-dc.mp3';
-            break;
-          default:
-            modelSrc = '#animated-model';
-            videoSrc = '#side-video';
-            audioSrc = 'voice.mp3';
-        }
-        
-        // เปลี่ยนโมเดลในส่วนอาชีพ
-        careerModel.setAttribute('gltf-model', modelSrc);
-        careerModel.setAttribute('animation-mixer', '');
-        
-        // เปลี่ยนวิดีโอในส่วนอาชีพ
-        careerVideo.setAttribute('src', videoSrc);
-        
-        // เปลี่ยนเสียง
-        voice.src = audioSrc;
-        
-        // รอสักครู่แล้วเล่นสื่อใหม่
+        // รอสักครู่เพื่อให้การล้างแคชสมบูรณ์
         setTimeout(() => {
-          voice.play().catch(e => console.warn('ไม่สามารถเล่นเสียงได้:', e));
-          console.log(`เล่นสื่อใหม่: ${careerName}`);
-        }, 800);
-        
-        // อัพเดตสถานะ
-        status.textContent = `แสดง: ${careerName}`;
-        status.style.background = 'rgba(255,150,0,0.7)';
-        scanFrame.style.display = 'none';
+          // แสดง career container (โมเดลจากปุ่ม)
+          careerContainer.setAttribute('visible', 'true');
+          
+          // กำหนดไฟล์ตามอาชีพที่ถูกต้อง
+          let modelSrc, videoSrc, audioSrc;
+          
+          switch(careerName) {
+            case 'Network Security':
+              modelSrc = loadAssetDynamic('career-network-model', 'network-model.glb');
+              videoSrc = loadAssetDynamic('career-network-video', 'video-network.mp4');
+              audioSrc = 'voice-network.mp3';
+              break;
+            case 'Cloud Engineer':
+              modelSrc = loadAssetDynamic('career-cloud-model', 'cloud-model.glb');
+              videoSrc = loadAssetDynamic('career-cloud-video', 'video-cloud.mp4');
+              audioSrc = 'voice-cloud.mp3';
+              break;
+            case 'AI Engineer':
+              modelSrc = loadAssetDynamic('career-ai-model', 'ai-model.glb');
+              videoSrc = loadAssetDynamic('career-ai-video', 'video-ai.mp4');
+              audioSrc = 'voice-ai.mp3';
+              break;
+            case 'Data Center':
+              modelSrc = loadAssetDynamic('career-dc-model', 'dc-model.glb');
+              videoSrc = loadAssetDynamic('career-dc-video', 'video-dc.mp4');
+              audioSrc = 'voice-dc.mp3';
+              break;
+            default:
+              modelSrc = '#animated-model';
+              videoSrc = '#side-video';
+              audioSrc = 'voice.mp3';
+          }
+          
+          // เปลี่ยนโมเดลในส่วนอาชีพ
+          careerModel.setAttribute('gltf-model', modelSrc);
+          careerModel.setAttribute('animation-mixer', '');
+          
+          // เปลี่ยนวิดีโอในส่วนอาชีพ
+          careerVideo.setAttribute('src', videoSrc);
+          
+          // เปลี่ยนเสียง
+          voice.src = audioSrc;
+          
+          // รอสักครู่แล้วเล่นสื่อใหม่
+          setTimeout(() => {
+            voice.play().catch(e => console.warn('ไม่สามารถเล่นเสียงได้:', e));
+            console.log(`เล่นสื่อใหม่: ${careerName}`);
+          }, 500);
+          
+          // อัพเดตสถานะ
+          status.textContent = `แสดง: ${careerName}`;
+          status.style.background = 'rgba(255,150,0,0.7)';
+          scanFrame.style.display = 'none';
+        }, 500); // เพิ่มเวลารอให้แคชล้างสมบูรณ์
+      }
       }
 
       // ปุ่มอาชีพคลิก
@@ -257,7 +343,6 @@
           }, 100);
         });
       });
-    };
-  </script>
-</body>
+    </script>
+  </body>
 </html>
