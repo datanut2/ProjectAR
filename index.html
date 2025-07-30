@@ -59,6 +59,16 @@
   <!-- audio element -->
   <audio id="voice" src="voice.mp3" preload="auto"></audio>
 
+  <!-- วิดีโอแยกไว้ใต้ body เพื่อใช้เป็น texture ใน <a-video> -->
+  <video id="side-video" 
+         src="career-video.mp4" 
+         preload="auto" 
+         loop 
+         muted 
+         playsinline 
+         crossorigin="anonymous"
+         style="display: none;"></video>
+
   <!-- AR Scene -->
   <a-scene 
     embedded
@@ -73,6 +83,7 @@
       smooth="true"
       smoothCount="5">
       
+      <!-- โมเดล 3D -->
       <a-entity
         id="model-entity"
         gltf-model="model.glb"
@@ -81,6 +92,19 @@
         scale="0.5 0.5 0.5"
         animation-mixer>
       </a-entity>
+
+      <!-- เพิ่มวิดีโอข้างโมเดล -->
+      <a-video 
+        src="#side-video"
+        position="1.2 0 0"      <!-- ขยับไปข้างขวา 1.2 หน่วย -->
+        rotation="-90 0 0"      <!-- วางแนวราบกับพื้น marker -->
+        width="1.6" 
+        height="0.9" 
+        autoplay="true"
+        loop="true"
+        muted="true">
+      </a-video>
+
     </a-marker>
 
     <a-entity camera></a-entity>
@@ -93,14 +117,16 @@
       const modelEntity = document.querySelector('#model-entity');
       const voice = document.getElementById('voice');
       const unlock = document.getElementById('unlock');
+      const sideVideo = document.getElementById('side-video');
 
-      // ปลดล็อกเสียงด้วย user gesture ครั้งเดียว
-      const unlockAudio = () => {
+      // ปลดล็อกเสียง & วิดีโอด้วย user gesture ครั้งเดียว
+      const unlockMedia = () => {
         voice.play().then(()=> voice.pause());
+        sideVideo.play().then(()=> sideVideo.pause());
         unlock.style.display = 'none';
-        document.body.removeEventListener('click', unlockAudio);
+        document.body.removeEventListener('click', unlockMedia);
       };
-      document.body.addEventListener('click', unlockAudio);
+      document.body.addEventListener('click', unlockMedia);
 
       // เมื่อเจอ Hiro marker
       marker.addEventListener('markerFound', function() {
@@ -110,6 +136,9 @@
         // เล่นเสียงพูด
         voice.currentTime = 0;
         voice.play().catch(e => console.warn('play() failed:', e));
+        // เล่นวิดีโอ
+        sideVideo.currentTime = 0;
+        sideVideo.play().catch(e => console.warn('video play() failed:', e));
         // เริ่ม animation-mixer ถ้ามี
         const mixer = modelEntity.components['animation-mixer'];
         if (mixer) {
@@ -123,7 +152,7 @@
         console.log('Hiro Marker หายไป');
         status.textContent = 'กำลังค้นหา Hiro Marker...';
         status.style.background = 'rgba(0, 0, 0, 0.7)';
-        // ไม่หยุดเสียงหรือซ่อนโมเดล
+        // ไม่หยุดเสียงหรือวิดีโอ
       });
 
       // ตรวจสอบการโหลดโมเดล
