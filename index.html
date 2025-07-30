@@ -64,8 +64,8 @@
         <a-box position="0 0 -0.2" width="3" height="2.5" depth="0.1" material="color: #333; opacity: 0.3"></a-box>
         <!-- วิดีโอ - อยู่ด้านหลัง (ขยับขึ้นและไปขวา) -->
         <a-video id="career-video" position="0.4 0.5 -0.1" width="1.5" height="0.84" rotation="0 0 0"></a-video>
-        <!-- โมเดล - อยู่ด้านหน้า (ขยับไปซ้าย) -->
-        <a-entity id="career-model" position="-0.3 0.2 0.1" scale="0.2 0.2 0.2" rotation="0 45 0"></a-entity>
+        <!-- โมเดล - อยู่ด้านหน้า (เท้าชิดขอบล่างวิดีโอ) -->
+        <a-entity id="career-model" position="-0.3 0.08 0.1" scale="0.2 0.2 0.2" rotation="0 45 0"></a-entity>
         <!-- ข้อความแสดงสถานะ -->
         <a-text id="career-status" position="0 -1.2 0" value="Career Content Loading..." align="center" color="white" width="4"></a-text>
       </a-entity>
@@ -349,7 +349,7 @@
               }
               
               careerModel.setAttribute('scale', modelScale); 
-              careerModel.setAttribute('position', '-0.3 0.2 0.1'); // ซ้าย ด้านหน้า
+              careerModel.setAttribute('position', '-0.3 0.08 0.1'); // ซ้าย เท้าชิดขอบล่างวิดีโอ ด้านหน้า
               careerModel.setAttribute('rotation', '0 45 0'); // หมุนเล็กน้อยเพื่อให้เห็นมุม
               
               // ตั้งค่าวิดีโอใหม่ (อยู่ด้านหลัง)
