@@ -4,25 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AR Scanner - Hiro Centered</title>
+  <!-- โหลด A-Frame -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <!-- โหลด AR.js -->
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
   <style>
-    .scan-frame {
-      position: fixed; top:50%; left:50%; transform:translate(-50%, -50%);
-      width:280px; height:280px; border:3px solid rgba(255,255,255,0.8);
-      border-radius:20px; z-index:1000; pointer-events:none;
-      box-shadow:0 0 0 4000px rgba(0,0,0,0.4); display:none;
-    }
-    #status {
-      position: fixed; bottom:20px; left:50%; transform:translateX(-50%);
-      background:rgba(0,0,0,0.7); color:#fff; padding:10px 20px;
-      border-radius:20px; z-index:1000; display:none;
-    }
-    #unlock {
-      position: fixed; top:50%; left:50%; transform:translate(-50%, -50%);
-      background:rgba(0,0,0,0.8); color:#fff; padding:15px 30px;
-      border-radius:10px; font-size:1.2em; z-index:1001;
-    }
+    .scan-frame { position: fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:280px; height:280px; border:3px solid rgba(255,255,255,0.8); border-radius:20px; z-index:1000; pointer-events:none; box-shadow:0 0 0 4000px rgba(0,0,0,0.4); display:none; }
+    #status { position: fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:#fff; padding:10px 20px; border-radius:20px; z-index:1000; display:none; }
+    #unlock { position: fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 30px; border-radius:10px; font-size:1.2em; z-index:1001; }
   </style>
 </head>
 <body style="margin:0; overflow:hidden;">
@@ -37,7 +26,8 @@
       <a-video id="video-entity" src="#side-video" position="0 0 -0.5" rotation="-90 0 0" width="1" height="1.78" autoplay loop muted visible="false"></a-video>
       <a-entity id="model-entity" gltf-model="model.glb" position="0 0 0.1" rotation="-90 0 0" scale="0.5 0.5 0.5" animation-mixer visible="false"></a-entity>
     </a-marker>
-    <a-entity id="camera-wrapper" camera position="0 0 3"></a-entity> <!-- ✅ กล้องถอยหลัง -->
+    <!-- Camera wrapper for centered display -->
+    <a-entity id="camera-wrapper" camera></a-entity>
   </a-scene>
 
   <script>
@@ -70,39 +60,36 @@
         status.style.background = 'rgba(0,255,0,0.7)';
         scanFrame.style.display = 'none';
 
+        // play sound
+        voice.currentTime = 0; voice.play().catch(()=>{});
+        // play video
+        sideVideo.currentTime = 0; sideVideo.play().catch(()=>{});
+        // animation
         const mixer = modelOrigin.components['animation-mixer'];
         if(mixer){ mixer.mixer.setTime(0); mixer.play(); }
 
         if(!anchored){
           modelOrigin.setAttribute('visible','false');
           videoOrigin.setAttribute('visible','false');
-
-          // วิดีโอด้านหลัง (แนวตั้งเต็มจอแบบพอดี)
+          // clone video full screen behind
           const cloneVideo = videoOrigin.cloneNode(true);
           cloneVideo.removeAttribute('id');
           cloneVideo.setAttribute('visible','true');
+          // position facing camera
           cloneVideo.setAttribute('rotation','0 0 0');
-          cloneVideo.setAttribute('position','0 0 -2');   // ✅ ถอยห่าง
-          cloneVideo.setAttribute('width','1.5');
-          cloneVideo.setAttribute('height','2.67');
-
-          // โมเดลด้านหน้า/ขวา
+          cloneVideo.setAttribute('position','0 0 -1');
+          cloneVideo.setAttribute('width','1.6');
+          cloneVideo.setAttribute('height','2.84'); // taller
+          // clone model front-right
           const cloneModel = modelOrigin.cloneNode(true);
           cloneModel.removeAttribute('id');
           cloneModel.setAttribute('visible','true');
           cloneModel.setAttribute('rotation','0 180 0');
-          cloneModel.setAttribute('position','0.7 -0.5 -1.4');  // ✅ ชัดเจนและไม่ชน
-          cloneModel.setAttribute('scale','0.4 0.4 0.4');
+          cloneModel.setAttribute('position','0.6 -0.2 -0.9');
+          cloneModel.setAttribute('scale','0.6 0.6 0.6');
 
           cameraWrap.appendChild(cloneVideo);
           cameraWrap.appendChild(cloneModel);
-
-          // เล่นเสียงและวิดีโอเมื่อแสดงแล้วจริง
-          setTimeout(() => {
-            voice.currentTime = 0; voice.play().catch(()=>{});
-            sideVideo.currentTime = 0; sideVideo.play().catch(()=>{});
-          }, 300);
-
           anchored = true;
         }
       });
