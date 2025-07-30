@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AR Scanner - Hiro Fixed</title>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
@@ -47,98 +47,94 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">กำลังค้นหา Hiro Marker...</div>
+  <div id="status">22กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
 
   <audio id="voice" src="voice.mp3" preload="auto"></audio>
   <video id="side-video" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous" style="display:none;"></video>
 
-  <a-scene id="ar-scene" embedded arjs="sourceType:webcam; debugUIEnabled:false;" renderer="logarithmicDepthBuffer:true;" vr-mode-ui="enabled:false" style="visibility:hidden;">
-    <!-- กำหนด size เพื่อให้ขอบ marker คือ ±0.5 unit -->
-    <a-marker preset="hiro" id="hiro-marker" smooth="true" smoothCount="5" size="1">
-      <!-- โมเดล ชิดขอบซ้าย -->
-      <a-entity
-        id="model-entity"
-        gltf-model="model.glb"
-        position="-0.5 0 0"
-        rotation="0 0 0"
-        scale="0.5 0.5 0.5"
-        animation-mixer
-        visible="false">
+  <a-scene id="ar-scene"
+           embedded
+           vr-mode-ui="enabled:false"
+           renderer="logarithmicDepthBuffer:true"
+           arjs="sourceType: webcam; debugUIEnabled: false;"
+           style="visibility:hidden;">
+
+    <!-- marker detector -->
+    <a-marker preset="hiro" id="hiro-marker"></a-marker>
+
+    <!-- camera -->
+    <a-entity id="camera-wrapper" camera position="0 0 0">
+      <!-- container ที่อยู่ตรงกลางหน้าจอ ติดกับกล้อง -->
+      <a-entity id="fixed-container" visible="false">
+        <!-- โมเดล -->
+        <a-entity id="model-entity"
+                  gltf-model="model.glb"
+                  position="0 0 -3"
+                  rotation="0 0 0"
+                  scale="0.8 0.8 0.8"
+                  animation-mixer>
+        </a-entity>
+        <!-- วิดีโอ -->
+        <a-video id="video-entity"
+                 src="#side-video"
+                 position="0 -1 -3"
+                 width="1.78" height="1"
+                 autoplay loop muted>
+        </a-video>
       </a-entity>
-
-      <!-- วิดีโอ ชิดขอบขวา -->
-      <a-video
-        id="video-entity"
-        src="#side-video"
-        position="0.5 0 0"
-        rotation="0 0 0"
-        width="1"
-        height="1"
-        autoplay
-        loop
-        muted
-        visible="false">
-      </a-video>
-
-    </a-marker>
-
-    <a-entity id="camera-wrapper" camera position="0 0 3"></a-entity>
+    </a-entity>
   </a-scene>
 
   <script>
     window.onload = () => {
-      const unlockBtn   = document.getElementById('unlock');
-      const scanFrame   = document.querySelector('.scan-frame');
-      const status      = document.getElementById('status');
-      const arScene     = document.getElementById('ar-scene');
-      const marker      = document.getElementById('hiro-marker');
-      const modelEntity = document.getElementById('model-entity');
-      const videoEntity = document.getElementById('video-entity');
-      const cameraWrap  = document.getElementById('camera-wrapper');
-      const voice       = document.getElementById('voice');
-      const sideVideo   = document.getElementById('side-video');
+      const unlockBtn     = document.getElementById('unlock');
+      const scanFrame     = document.querySelector('.scan-frame');
+      const status        = document.getElementById('status');
+      const arScene       = document.getElementById('ar-scene');
+      const marker        = document.getElementById('hiro-marker');
+      const fixedCont     = document.getElementById('fixed-container');
+      const voice         = document.getElementById('voice');
+      const sideVideo     = document.getElementById('side-video');
 
-      // Unlock media
+      // ปลดล็อคเสียง & วิดีโอ
       const startAR = () => {
         voice.play().then(() => voice.pause());
         sideVideo.play().then(() => sideVideo.pause());
 
-        unlockBtn.style.display    = 'none';
-        scanFrame.style.display    = 'block';
-        status.style.display       = 'block';
-        arScene.style.visibility   = 'visible';
+        unlockBtn.style.display  = 'none';
+        scanFrame.style.display  = 'block';
+        status.style.display     = 'block';
+        arScene.style.visibility = 'visible';
         document.body.removeEventListener('click', startAR);
       };
       document.body.addEventListener('click', startAR);
 
+      // เจอ marker
       marker.addEventListener('markerFound', () => {
-        status.textContent            = 'พบ Hiro Marker!';
-        status.style.background       = 'rgba(0,255,0,0.7)';
-        scanFrame.style.display       = 'none';
+        status.textContent      = 'พบ Hiro Marker!';
+        status.style.background = 'rgba(0,255,0,0.7)';
+        scanFrame.style.display = 'none';
 
-        modelEntity.setAttribute('visible', 'true');
-        videoEntity.setAttribute('visible', 'true');
-        cameraWrap.setAttribute('position', '0 0 4');
+        // แสดง container กึ่งกลาง
+        fixedCont.setAttribute('visible', 'true');
 
+        // เล่นวิดีโอ
         sideVideo.currentTime = 0;
-        sideVideo.play().catch(e => console.warn('ไม่สามารถเล่นวิดีโอได้:', e));
+        sideVideo.play().catch(e => console.warn(e));
 
+        // เล่นเสียงหลัง delay
         setTimeout(() => {
           voice.currentTime = 0;
-          voice.play().catch(e => console.warn('ไม่สามารถเล่นเสียงได้:', e));
+          voice.play().catch(e => console.warn(e));
         }, 1000);
-
-        const mixer = modelEntity.components['animation-mixer'];
-        if (mixer && mixer.mixer) {
-          mixer.mixer.setTime(0);
-          mixer.play();
-        }
       });
 
+      // หาย marker
       marker.addEventListener('markerLost', () => {
         status.textContent      = 'กำลังค้นหา Hiro Marker...';
         status.style.background = 'rgba(0,0,0,0.7)';
+        fixedCont.setAttribute('visible', 'false');
       });
     };
   </script>
