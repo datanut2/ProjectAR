@@ -47,7 +47,7 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">11กำลังค้นหา Hiro Marker...</div>
+  <div id="status">กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
 
   <audio id="voice" src="voice.mp3" preload="auto"></audio>
@@ -55,8 +55,6 @@
 
   <a-scene id="ar-scene" embedded arjs="sourceType:webcam; debugUIEnabled:false;" renderer="logarithmicDepthBuffer:true;" vr-mode-ui="enabled:false" style="visibility:hidden;">
     <a-marker preset="hiro" id="hiro-marker" smooth="true" smoothCount="5">
-
-      <!-- โมเดล 3D อยู่ทางซ้ายของวิดีโอ -->
       <a-entity
         id="model-entity"
         gltf-model="model.glb"
@@ -67,7 +65,6 @@
         visible="false">
       </a-entity>
 
-      <!-- วิดีโอแนวนอน อยู่ทางขวาของโมเดล -->
       <a-video
         id="video-entity"
         src="#side-video"
@@ -80,7 +77,6 @@
         muted
         visible="false">
       </a-video>
-
     </a-marker>
 
     <a-entity id="camera-wrapper" camera position="0 0 3"></a-entity>
@@ -99,40 +95,54 @@
       const voice       = document.getElementById('voice');
       const sideVideo   = document.getElementById('side-video');
 
+      // เริ่มต้น AR หลังผู้ใช้แตะหน้าจอ เพื่อปลดล็อคเสียงและวิดีโอ
       const startAR = () => {
         voice.play().then(() => voice.pause());
         sideVideo.play().then(() => sideVideo.pause());
 
-        unlockBtn.style.display = 'none';
-        scanFrame.style.display = 'block';
-        status.style.display    = 'block';
-        arScene.style.visibility = 'visible';
+        unlockBtn.style.display    = 'none';
+        scanFrame.style.display    = 'block';
+        status.style.display       = 'block';
+        arScene.style.visibility   = 'visible';
         document.body.removeEventListener('click', startAR);
       };
       document.body.addEventListener('click', startAR);
 
+      // เมื่อเจอ Hiro Marker
       marker.addEventListener('markerFound', () => {
-        status.textContent = 'พบ Hiro Marker!';
-        status.style.background = 'rgba(0,255,0,0.7)';
-        scanFrame.style.display = 'none';
+        status.textContent            = 'พบ Hiro Marker!';
+        status.style.background       = 'rgba(0,255,0,0.7)';
+        scanFrame.style.display       = 'none';
 
         modelEntity.setAttribute('visible', 'true');
         videoEntity.setAttribute('visible', 'true');
         cameraWrap.setAttribute('position', '0 0 4');
 
+        // เล่นวิดีโอทันที
         sideVideo.currentTime = 0;
-        sideVideo.play().catch(() => {});
+        sideVideo.play().catch((e) => {
+          console.warn('ไม่สามารถเล่นวิดีโอได้:', e);
+        });
+
+        // เล่นเสียงหลังสแกนเสร็จ (หน่วง 1 วินาที)
         setTimeout(() => {
           voice.currentTime = 0;
-          voice.play().catch(() => {});
+          voice.play().catch((e) => {
+            console.warn('ไม่สามารถเล่นเสียงได้:', e);
+          });
         }, 1000);
 
+        // รีเซ็ตแอนิเมชันโมเดล
         const mixer = modelEntity.components['animation-mixer'];
-        if (mixer) { mixer.mixer.setTime(0); mixer.play(); }
+        if (mixer && mixer.mixer) {
+          mixer.mixer.setTime(0);
+          mixer.play();
+        }
       });
 
+      // ขณะ Marker หายไป
       marker.addEventListener('markerLost', () => {
-        status.textContent = 'กำลังค้นหา Hiro Marker...';
+        status.textContent      = 'กำลังค้นหา Hiro Marker...';
         status.style.background = 'rgba(0,0,0,0.7)';
       });
     };
