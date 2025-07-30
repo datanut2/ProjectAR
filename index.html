@@ -53,17 +53,17 @@
 
   <script>
     window.onload = () => {
-      const unlockBtn    = document.getElementById('unlock');
-      const scanFrame    = document.querySelector('.scan-frame');
-      const status       = document.getElementById('status');
-      const arScene      = document.getElementById('ar-scene');
-      const marker       = document.getElementById('hiro-marker');
-      const modelOrigin  = document.getElementById('model-entity');
-      const videoOrigin  = document.getElementById('video-entity');
-      const cameraWrap   = document.getElementById('camera-wrapper');
-      const voice        = document.getElementById('voice');
-      const sideVideo    = document.getElementById('side-video');
-      let anchored = false;
+      const unlockBtn   = document.getElementById('unlock');
+      const scanFrame   = document.querySelector('.scan-frame');
+      const status      = document.getElementById('status');
+      const arScene     = document.getElementById('ar-scene');
+      const marker      = document.getElementById('hiro-marker');
+      const modelOrigin = document.getElementById('model-entity');
+      const videoOrigin = document.getElementById('video-entity');
+      const cameraWrap  = document.getElementById('camera-wrapper');
+      const voice       = document.getElementById('voice');
+      const sideVideo   = document.getElementById('side-video');
+      let anchored      = false;
 
       // เริ่ม AR หลัง unlock
       const startAR = () => {
@@ -81,6 +81,7 @@
       marker.addEventListener('markerFound', () => {
         status.textContent = 'พบ Hiro Marker!';
         status.style.background = 'rgba(0,255,0,0.7)';
+        // ซ่อนกรอบสแกน
         scanFrame.style.display = 'none';
 
         // เล่นเสียง & วิดีโอ
@@ -91,17 +92,20 @@
         const mixer = modelOrigin.components['animation-mixer'];
         if (mixer) { mixer.mixer.setTime(0); mixer.play(); }
 
-        // แสดงและย้ายไปกลางกล้อง ครั้งเดียว
         if (!anchored) {
-          const modelClone = modelOrigin.cloneNode(true);
-          const videoClone = videoOrigin.cloneNode(true);
-          modelClone.removeAttribute('id'); videoClone.removeAttribute('id');
-          modelClone.setAttribute('visible', 'true');
-          videoClone.setAttribute('visible', 'true');
-          modelClone.setAttribute('position', '0 0 -1');
-          videoClone.setAttribute('position', '0 -0.5 -1');
-          cameraWrap.appendChild(videoClone);
-          cameraWrap.appendChild(modelClone);
+          // ซ่อนต้นฉบับบน Marker
+          modelOrigin.setAttribute('visible', 'false');
+          videoOrigin.setAttribute('visible', 'false');
+          // สร้าง clone และย้ายไปกลางจอ
+          const cloneModel = modelOrigin.cloneNode(true);
+          const cloneVideo = videoOrigin.cloneNode(true);
+          cloneModel.removeAttribute('id'); cloneVideo.removeAttribute('id');
+          cloneModel.setAttribute('visible', 'true');
+          cloneVideo.setAttribute('visible', 'true');
+          cloneModel.setAttribute('position', '0 0 -1');
+          cloneVideo.setAttribute('position', '0 -0.5 -1');
+          cameraWrap.appendChild(cloneVideo);
+          cameraWrap.appendChild(cloneModel);
           anchored = true;
         }
       });
@@ -110,7 +114,6 @@
       marker.addEventListener('markerLost', () => {
         status.textContent = 'กำลังค้นหา Hiro Marker...';
         status.style.background = 'rgba(0,0,0,0.7)';
-        // scanFrame ถูกซ่อนแล้ว ไม่เอากลับ
       });
     };
   </script>
