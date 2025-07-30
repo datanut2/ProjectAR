@@ -23,8 +23,8 @@
 
   <a-scene id="ar-scene" embedded arjs="sourceType:webcam;debugUIEnabled:false;" renderer="logarithmicDepthBuffer:true;" vr-mode-ui="enabled:false" style="visibility:hidden;">
     <a-marker preset="hiro" id="hiro-marker" smooth="true" smoothCount="5">
-      <a-video id="video-entity" src="#side-video" position="0 0 -0.5" rotation="-90 0 0" width="1" height="1.78" autoplay loop muted visible="false"></a-video>
-      <a-entity id="model-entity" gltf-model="model.glb" position="0 0 0.1" rotation="-90 0 0" scale="0.5 0.5 0.5" animation-mixer visible="false"></a-entity>
+      <a-video id="video-entity" src="#side-video" position="0 0 -0.8" rotation="-90 0 0" width="2" height="3.56" autoplay loop muted visible="false"></a-video>
+      <a-entity id="model-entity" gltf-model="model.glb" position="-0.5 0 0" rotation="-90 90 0" scale="0.7 0.7 0.7" animation-mixer visible="false"></a-entity>
     </a-marker>
     <!-- Camera wrapper for centered display -->
     <a-entity id="camera-wrapper" camera></a-entity>
@@ -44,6 +44,7 @@
       const sideVideo   = document.getElementById('side-video');
       let anchored      = false;
 
+      // เริ่ม AR หลัง unlock
       const startAR = () => {
         voice.play().then(()=>voice.pause());
         sideVideo.play().then(()=>sideVideo.pause());
@@ -60,33 +61,31 @@
         status.style.background = 'rgba(0,255,0,0.7)';
         scanFrame.style.display = 'none';
 
-        // play sound
         voice.currentTime = 0; voice.play().catch(()=>{});
-        // play video
         sideVideo.currentTime = 0; sideVideo.play().catch(()=>{});
-        // animation
+
         const mixer = modelOrigin.components['animation-mixer'];
         if(mixer){ mixer.mixer.setTime(0); mixer.play(); }
 
         if(!anchored){
-          modelOrigin.setAttribute('visible','false');
-          videoOrigin.setAttribute('visible','false');
-          // clone video full screen behind
+          modelOrigin.setAttribute('visible','true');
+          videoOrigin.setAttribute('visible','true');
+          // clone video full screen behind model
           const cloneVideo = videoOrigin.cloneNode(true);
           cloneVideo.removeAttribute('id');
           cloneVideo.setAttribute('visible','true');
-          // position facing camera
+          cloneVideo.setAttribute('position','0 0 -1');  // จอหลัง กลาง
           cloneVideo.setAttribute('rotation','0 0 0');
-          cloneVideo.setAttribute('position','0 0 -1');
-          cloneVideo.setAttribute('width','1.6');
-          cloneVideo.setAttribute('height','2.84'); // taller
-          // clone model front-right
+          cloneVideo.setAttribute('width','2');          // เพิ่มขนาด
+          cloneVideo.setAttribute('height','3.56');
+
+          // clone model front-left
           const cloneModel = modelOrigin.cloneNode(true);
           cloneModel.removeAttribute('id');
           cloneModel.setAttribute('visible','true');
-          cloneModel.setAttribute('rotation','0 180 0');
-          cloneModel.setAttribute('position','0.6 -0.2 -0.9');
-          cloneModel.setAttribute('scale','0.6 0.6 0.6');
+          cloneModel.setAttribute('position','-0.6 0 -0.9'); // อยู่หน้า-ซ้ายเล็กน้อย
+          cloneModel.setAttribute('rotation','0 90 0');
+          cloneModel.setAttribute('scale','0.8 0.8 0.8');
 
           cameraWrap.appendChild(cloneVideo);
           cameraWrap.appendChild(cloneModel);
