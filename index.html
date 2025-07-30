@@ -32,8 +32,7 @@
   <!-- เมนูเลือกอาชีพ -->
   <div id="career-menu">
     <h3>เลือกสายงาน</h3>
-    <button data-career="Test Model">ทดสอบ Model.glb</button>
-    <button data-career="Network Security">Network Security</button>
+    <button data-career="Network Engineer">Network Engineer</button>
     <button data-career="Cloud Engineer">Cloud Engineer</button>
     <button data-career="AI Engineer">AI Engineer</button>
     <button data-career="Data Center">Data Center</button>
@@ -52,8 +51,10 @@
     <!-- Marker container (แสดงเมื่อสแกน Hiro marker) -->
     <a-marker preset="hiro" id="hiro-marker">
       <a-entity id="marker-container" visible="true">
-        <a-entity id="model-entity" gltf-model="#animated-model" animation-mixer position="0 0 0" scale="0.3 0.3 0.3"></a-entity>
-        <a-video id="video-entity" src="#side-video-element" position="0 -0.8 0" width="1" height="0.5625" autoplay loop muted></a-video>
+        <!-- โมเดลจาก marker (ด้านหน้า - ตำแหน่งเดียวกับอาชีพอื่น) -->
+        <a-entity id="model-entity" gltf-model="#animated-model" animation-mixer position="-0.3 0.08 0.1" scale="0.3 0.3 0.3" rotation="0 45 0"></a-entity>
+        <!-- วิดีโอจาก marker (ด้านหลัง - ตำแหน่งเดียวกับอาชีพอื่น) -->
+        <a-video id="video-entity" src="#side-video-element" position="0.4 0.5 -0.1" width="1.5" height="0.84" rotation="0 0 0" autoplay loop muted></a-video>
       </a-entity>
     </a-marker>
     
@@ -283,26 +284,7 @@
           let modelSrc, videoSrc, audioSrc;
           
           switch(careerName) {
-            case 'Test Model':
-              // สำหรับ Test Model ให้ใช้การสแกน marker แบบเดิม
-              console.log('เลือก Test Model - ต้องสแกน marker');
-              
-              // ซ่อน career container และกลับไปใช้ marker scanning
-              careerContainer.setAttribute('visible', 'false');
-              markerContainer.setAttribute('visible', 'false'); // ซ่อนก่อน รอให้สแกน
-              
-              // อัพเดตสถานะ
-              status.textContent = 'กรุณาสแกน Hiro Marker เพื่อดู Test Model';
-              status.style.background = 'rgba(255,150,0,0.7)';
-              scanFrame.style.display = 'block'; // แสดงกรอบสแกนอีกครั้ง
-              
-              // รีเซ็ต markerFound เพื่อให้สามารถสแกนใหม่ได้
-              markerFound = false;
-              
-              // ออกจากฟังก์ชันเพื่อไม่ให้ดำเนินการต่อ
-              return;
-              
-            case 'Network Security':
+            case 'Network Engineer':
               modelSrc = 'network-model.glb';
               videoSrc = 'video-network.mp4';
               audioSrc = 'voice-network.mp3';
