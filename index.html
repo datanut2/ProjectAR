@@ -63,9 +63,9 @@
         <!-- พื้นหลังเพื่อให้เห็นขอบเขต -->
         <a-box position="0 0 -0.1" width="4" height="3" depth="0.1" material="color: #333; opacity: 0.3"></a-box>
         <!-- โมเดล -->
-        <a-entity id="career-model" position="-0.8 0.2 0" scale="0.15 0.15 0.15" rotation="0 45 0"></a-entity>
-        <!-- วิดีโอ - ข้างขวาของโมเดล -->
-        <a-video id="career-video" position="0.8 0.2 0" width="1.5" height="0.84" rotation="0 0 0"></a-video>
+        <a-entity id="career-model" position="-0.8 0.2 0" scale="0.2 0.2 0.2" rotation="0 45 0"></a-entity>
+        <!-- วิดีโอ - ข้างขวาของโมเดล (ขนาดเล็กลง) -->
+        <a-video id="career-video" position="0.8 0.2 0" width="1.2" height="0.67" rotation="0 0 0"></a-video>
         <!-- ข้อความแสดงสถานะ -->
         <a-text id="career-status" position="0 -1.2 0" value="Career Content Loading..." align="center" color="white" width="4"></a-text>
       </a-entity>
@@ -301,21 +301,26 @@
               await waitForEntity(careerModel);
               await waitForEntity(careerVideo);
               
-              // ตั้งค่าโมเดลใหม่
+              // ตั้งค่าโมเดลใหม่ (ขยายขนาดให้สมมาตรกับวิดีโอ)
               console.log('ตั้งค่าโมเดล...', modelRef);
               careerModel.setAttribute('gltf-model', modelRef);
               careerModel.setAttribute('animation-mixer', '');
               careerModel.setAttribute('visible', 'true');
-              careerModel.setAttribute('scale', '0.15 0.15 0.15'); // ขนาดเล็ก
+              careerModel.setAttribute('scale', '0.2 0.2 0.2'); // ขยายขนาดให้ใหญ่ขึ้น
               careerModel.setAttribute('position', '-0.8 0.2 0'); // ซ้ายของจอ
               careerModel.setAttribute('rotation', '0 45 0'); // หมุนเล็กน้อยเพื่อให้เห็นมุม
               
-              // ตั้งค่าวิดีโอใหม่
+              // ตั้งค่าวิดีโอใหม่ (ลดขนาดและแก้ไขการโหลดไฟล์)
               console.log('ตั้งค่าวิดีโอ...', videoRef);
-              careerVideo.setAttribute('material', `src: ${videoRef}; side: double; transparent: false; shader: flat; alphaTest: 0.1`);
+              // ลบ material เก่าก่อน
+              careerVideo.removeAttribute('material');
+              careerVideo.removeAttribute('src');
+              
+              // ตั้งค่าใหม่
+              careerVideo.setAttribute('material', `src: ${videoRef}; side: double; transparent: false; shader: flat`);
               careerVideo.setAttribute('visible', 'true');
-              careerVideo.setAttribute('width', '1.5'); // ขนาดวิดีโอ
-              careerVideo.setAttribute('height', '0.84');
+              careerVideo.setAttribute('width', '1.2'); // ลดขนาดวิดีโอ
+              careerVideo.setAttribute('height', '0.67'); // สัดส่วน 16:9
               careerVideo.setAttribute('position', '0.8 0.2 0'); // ขวาของจอ - เดียวกับโมเดล
               careerVideo.setAttribute('rotation', '0 0 0');
               
@@ -347,29 +352,36 @@
               
               // รอสักครู่แล้วเล่นสื่อใหม่
               setTimeout(() => {
-                // เล่นวิดีโอก่อน
+                // หาและเล่นวิดีโอที่ถูกต้อง
                 const videoElement = document.querySelector('#career-video-asset');
                 if (videoElement) {
-                  console.log('กำลังเล่นวิดีโอ:', videoElement.src);
+                  console.log('กำลังเล่นวิดีโอที่ถูกต้อง:', videoElement.src);
+                  console.log('วิดีโอ ID:', videoElement.id);
+                  console.log('วิดีโอ readyState:', videoElement.readyState);
+                  
+                  // ตั้งค่าวิดีโอ
                   videoElement.currentTime = 0;
-                  videoElement.muted = true; // ตั้งให้เป็น muted เผื่อปัญหา autoplay
+                  videoElement.muted = true; 
                   videoElement.loop = true;
+                  
+                  // อัพเดต material ของ A-Frame อีกครั้งเพื่อให้แน่ใจ
+                  careerVideo.setAttribute('material', `src: ${videoRef}; side: double; transparent: false; shader: flat`);
+                  
                   videoElement.play().then(() => {
-                    console.log('วิดีโอเล่นสำเร็จ');
-                    // พยายามแสดงวิดีโอบน A-Frame
-                    careerVideo.setAttribute('material', `src: ${videoRef}; side: double; transparent: false`);
-                    careerVideo.setAttribute('geometry', 'primitive: plane');
+                    console.log('วิดีโอเล่นสำเร็จ:', careerName);
+                    // บังคับให้ A-Frame อัพเดตวิดีโอ
+                    careerVideo.components.material.material.needsUpdate = true;
                   }).catch(e => {
                     console.warn('ไม่สามารถเล่นวิดีโอได้:', e);
-                    // ลองใช้ static image แทน
-                    careerVideo.setAttribute('material', 'color: #FF0000');
-                    careerVideo.setAttribute('text', 'value: VIDEO NOT LOADED; color: white; align: center;');
+                    // แสดง placeholder พร้อมชื่ออาชีพ
+                    careerVideo.setAttribute('material', `color: #FF0000; transparent: false`);
+                    careerVideo.setAttribute('text', `value: ${careerName} VIDEO; color: white; align: center; width: 6`);
                   });
                 } else {
-                  console.error('ไม่พบ video element');
-                  // แสดง placeholder
-                  careerVideo.setAttribute('material', 'color: #00FF00');
-                  careerVideo.setAttribute('text', 'value: VIDEO PLACEHOLDER; color: black; align: center;');
+                  console.error('ไม่พบ video element สำหรับ:', careerName);
+                  // แสดง placeholder พร้อมชื่ออาชีพ
+                  careerVideo.setAttribute('material', `color: #00FF00; transparent: false`);
+                  careerVideo.setAttribute('text', `value: ${careerName} NO VIDEO; color: black; align: center; width: 6`);
                 }
                 
                 // เล่นเสียง
