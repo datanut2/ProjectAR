@@ -24,7 +24,7 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">22กำลังค้นหา Hiro Marker...</div>
+  <div id="status">กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
   <!-- ปุ่มอาชีพ -->
   <button id="career-btn">อาชีพที่น่าสนใจ</button>
@@ -155,42 +155,58 @@
         return `#${assetId}`;
       }
 
+      // ฟังก์ชันหยุดสื่อทั้งหมด
+      function stopAllMedia() {
+        // หยุดเสียง
+        voice.pause();
+        voice.currentTime = 0;
+        
+        // หยุดวิดีโอหลัก
+        sideVideo.pause();
+        sideVideo.currentTime = 0;
+        
+        // หยุดวิดีโอจาก career
+        const careerVideoEl = document.querySelector('#career-video');
+        if (careerVideoEl && careerVideoEl.components && careerVideoEl.components.material && careerVideoEl.components.material.material.map) {
+          careerVideoEl.components.material.material.map.image.pause();
+        }
+        
+        console.log('หยุดสื่อทั้งหมดแล้ว');
+      }
+
       // ฟังก์ชันเปลี่ยนอาชีพ - แสดงกลางจอโดยไม่ต้องสแกน
       function changeCareer(careerName) {
         console.log('เปลี่ยนเป็น:', careerName);
         
-        // หยุดเสียงและวิดีโอเก่า
-        voice.pause();
-        voice.currentTime = 0;
-        sideVideo.pause();
-        sideVideo.currentTime = 0;
+        // หยุดสื่อเก่าทั้งหมดก่อน
+        stopAllMedia();
         
         // แสดง career container (โมเดลจากปุ่ม)
         careerContainer.setAttribute('visible', 'true');
         
-        // กำหนดไฟล์ตามอาชีพ - ใช้ไฟล์หลักเป็นพื้นฐาน
+        // กำหนดไฟล์ตามอาชีพที่ถูกต้อง
         let modelSrc, videoSrc, audioSrc;
         
         switch(careerName) {
           case 'Network Security':
-            modelSrc = loadAssetDynamic('career-network-model', 'model.glb');
-            videoSrc = loadAssetDynamic('career-network-video', 'career-video.mp4');
-            audioSrc = 'voice.mp3';
+            modelSrc = loadAssetDynamic('career-network-model', 'network-model.glb');
+            videoSrc = loadAssetDynamic('career-network-video', 'video-network.mp4');
+            audioSrc = 'voice-network.mp3';
             break;
           case 'Cloud Engineer':
-            modelSrc = loadAssetDynamic('career-cloud-model', 'model.glb');
-            videoSrc = loadAssetDynamic('career-cloud-video', 'career-video.mp4');
-            audioSrc = 'voice.mp3';
+            modelSrc = loadAssetDynamic('career-cloud-model', 'cloud-model.glb');
+            videoSrc = loadAssetDynamic('career-cloud-video', 'video-cloud.mp4');
+            audioSrc = 'voice-cloud.mp3';
             break;
           case 'AI Engineer':
-            modelSrc = loadAssetDynamic('career-ai-model', 'model.glb');
-            videoSrc = loadAssetDynamic('career-ai-video', 'career-video.mp4');
-            audioSrc = 'voice.mp3';
+            modelSrc = loadAssetDynamic('career-ai-model', 'ai-model.glb');
+            videoSrc = loadAssetDynamic('career-ai-video', 'video-ai.mp4');
+            audioSrc = 'voice-ai.mp3';
             break;
           case 'Data Center':
-            modelSrc = loadAssetDynamic('career-dc-model', 'model.glb');
-            videoSrc = loadAssetDynamic('career-dc-video', 'career-video.mp4');
-            audioSrc = 'voice.mp3';
+            modelSrc = loadAssetDynamic('career-dc-model', 'dc-model.glb');
+            videoSrc = loadAssetDynamic('career-dc-video', 'video-dc.mp4');
+            audioSrc = 'voice-dc.mp3';
             break;
           default:
             modelSrc = '#animated-model';
@@ -208,10 +224,11 @@
         // เปลี่ยนเสียง
         voice.src = audioSrc;
         
-        // เล่นสื่อใหม่
+        // รอสักครู่แล้วเล่นสื่อใหม่
         setTimeout(() => {
           voice.play().catch(e => console.warn('ไม่สามารถเล่นเสียงได้:', e));
-        }, 500);
+          console.log(`เล่นสื่อใหม่: ${careerName}`);
+        }, 800);
         
         // อัพเดตสถานะ
         status.textContent = `แสดง: ${careerName}`;
