@@ -24,7 +24,7 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">11กำลังค้นหา Hiro Marker...</div>
+  <div id="status">กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
   <!-- ปุ่มอาชีพ -->
   <button id="career-btn">อาชีพที่น่าสนใจ</button>
@@ -33,7 +33,7 @@
   <div id="career-menu">
     <h3>เลือกสายงาน</h3>
     <button data-career="Test Model">ทดสอบ Model.glb</button>
-    <button data-career="Network Security">Network Security</button>
+    <button data-career="Network Engineer">Network Engineer</button>
     <button data-career="Cloud Engineer">Cloud Engineer</button>
     <button data-career="AI Engineer">AI Engineer</button>
     <button data-career="Data Center">Data Center</button>
@@ -48,6 +48,120 @@
       <a-asset-item id="animated-model" src="model.glb"></a-asset-item>
       <video id="side-video-element" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
     </a-assets>
+
+    <a-marker preset="hiro" id="hiro-marker">
+      <!-- เนื้อหาหลักจาก marker -->
+      <a-entity id="marker-container">
+        <!-- โมเดลจาก marker (ด้านหน้า) -->
+        <a-entity id="main-model-entity" 
+                  gltf-model="#animated-model" 
+                  animation-mixer
+                  scale="0.3 0.3 0.3" 
+                  position="-0.3 0.08 0.1" 
+                  rotation="0 45 0">
+        </a-entity>
+
+        <!-- วิดีโอจาก marker (ด้านหลัง) -->
+        <a-plane id="side-video-plane" 
+                 material="src: #side-video-element; side: double; transparent: false; shader: flat" 
+                 width="1.5" 
+                 height="0.84" 
+                 position="0.4 0.5 -0.1" 
+                 rotation="0 0 0">
+        </a-plane>
+      </a-entity>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    window.onload = () => {
+      const unlockBtn = document.getElementById('unlock');
+      const scanFrame = document.querySelector('.scan-frame');
+      const status = document.getElementById('status');
+      const arScene = document.getElementById('ar-scene');
+      const marker = document.getElementById('hiro-marker');
+      const markerContainer = document.getElementById('marker-container');
+      const voice = document.getElementById('voice');
+      const sideVideo = document.getElementById('side-video');
+      const sideVideoElement = document.getElementById('side-video-element');
+      const careerBtn = document.getElementById('career-btn');
+      const menu = document.getElementById('career-menu');
+      const closeBtn = document.getElementById('close-menu');
+
+      let markerFound = false;
+
+      // เปิด AR หลังคลิก
+      const startAR = () => {
+        voice.play().then(() => voice.pause()); 
+        sideVideo.play().then(() => sideVideo.pause());
+        sideVideoElement.play().then(() => sideVideoElement.pause());
+        unlockBtn.style.display = 'none'; 
+        scanFrame.style.display = 'block'; 
+        status.style.display = 'block'; 
+        arScene.style.visibility = 'visible';
+        careerBtn.style.display = 'block'; // แสดงปุ่มอาชีพ
+        document.body.removeEventListener('click', startAR);
+      };
+      document.body.addEventListener('click', startAR);
+
+      // พบ marker
+      marker.addEventListener('markerFound', () => {
+        status.textContent = 'พบ Hiro Marker!'; 
+        status.style.background = 'rgba(0,255,0,0.7)'; 
+        scanFrame.style.display = 'none'; 
+        markerFound = true;
+        
+        // แสดง marker container
+        markerContainer.setAttribute('visible', 'true');
+        
+        // เล่นสื่อจาก marker
+        sideVideoElement.currentTime = 0; 
+        sideVideoElement.play().catch(e=>console.warn(e)); 
+        setTimeout(()=>{ 
+          voice.currentTime=0; 
+          voice.play().catch(e=>console.warn(e)); 
+        },1000);
+      });
+
+      // หาย marker - แต่ยังคงแสดงโมเดลตลอด (sticky display)
+      marker.addEventListener('markerLost', () => {
+        if (!markerFound) {
+          status.textContent = 'กำลังค้นหา Hiro Marker...';
+          status.style.background = 'rgba(0,0,0,0.7)';
+          scanFrame.style.display = 'block';
+        } else {
+          status.textContent = 'โมเดลยังคงแสดงอยู่ (ไม่ต้องสแกน marker)';
+          status.style.background = 'rgba(0,150,255,0.7)';
+          scanFrame.style.display = 'none';
+          // ให้ marker container ยังคงแสดงอยู่
+          markerContainer.setAttribute('visible', 'true');
+        }
+      });
+
+      // ปุ่มอาชีพคลิก
+      careerBtn.addEventListener('click', () => {
+        menu.style.display = 'block';
+      });
+      
+      // ปิดเมนู
+      closeBtn.addEventListener('click', () => {
+        menu.style.display = 'none';
+      });
+      
+      // ปุ่มสายงาน
+      menu.querySelectorAll('button[data-career]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const careerName = btn.getAttribute('data-career');
+          alert('คุณเลือก: ' + careerName);
+          menu.style.display = 'none';
+        });
+      });
+    };
+  </script>
+</body>
+</html>
     
     <!-- Marker container (แสดงเมื่อสแกน Hiro marker) -->
     <a-marker preset="hiro" id="hiro-marker">
