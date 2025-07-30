@@ -32,6 +32,7 @@
   <!-- เมนูเลือกอาชีพ -->
   <div id="career-menu">
     <h3>เลือกสายงาน</h3>
+    <button data-career="Test Model">ทดสอบ Model.glb</button>
     <button data-career="Network Security">Network Security</button>
     <button data-career="Cloud Engineer">Cloud Engineer</button>
     <button data-career="AI Engineer">AI Engineer</button>
@@ -56,13 +57,13 @@
       </a-entity>
     </a-marker>
     
-    <!-- Career container (แสดงเมื่อเลือกอาชีพ) -->
-    <a-entity id="career-container" position="0 0 -2.5" visible="false">
-      <a-entity id="career-model" position="0 0 0" scale="0.3 0.3 0.3"></a-entity>
-      <a-video id="career-video" position="0 -0.8 0" width="1" height="0.5625" loop muted></a-video>
+    <!-- Career container (แสดงเมื่อเลือกอาชีพ) - อยู่หน้ากล้องโดยตรง -->
+    <a-entity camera position="0 1.6 0">
+      <a-entity id="career-container" position="0 0 -2.5" visible="false">
+        <a-entity id="career-model" position="0 0 0" scale="0.3 0.3 0.3"></a-entity>
+        <a-video id="career-video" position="0 -0.8 0" width="1" height="0.5625" loop muted></a-video>
+      </a-entity>
     </a-entity>
-    
-    <a-entity camera position="0 1.6 0"></a-entity>
     <a-entity light="type: ambient; intensity:0.6"></a-entity>
     <a-entity light="type: directional; intensity:0.8" position="-1 1 0"></a-entity>
   </a-scene>
@@ -245,6 +246,11 @@
           let modelSrc, videoSrc, audioSrc;
           
           switch(careerName) {
+            case 'Test Model':
+              modelSrc = 'model.glb';
+              videoSrc = 'career-video.mp4';
+              audioSrc = 'voice.mp3';
+              break;
             case 'Network Security':
               modelSrc = 'network-model.glb';
               videoSrc = 'video-network.mp4';
@@ -288,20 +294,27 @@
               await waitForEntity(careerVideo);
               
               // ตั้งค่าโมเดลใหม่
-              console.log('ตั้งค่าโมเดล...');
+              console.log('ตั้งค่าโมเดล...', modelRef);
               careerModel.setAttribute('gltf-model', modelRef);
               careerModel.setAttribute('animation-mixer', '');
               careerModel.setAttribute('visible', 'true');
-              careerModel.setAttribute('scale', '0.3 0.3 0.3');
-              careerModel.setAttribute('position', '0 0 0');
+              careerModel.setAttribute('scale', '0.5 0.5 0.5'); // ขยายขนาดให้เห็นชัดขึ้น
+              careerModel.setAttribute('position', '0 0.2 0'); // ยกขึ้นมาหน่อย
+              careerModel.setAttribute('rotation', '0 0 0');
               
               // ตั้งค่าวิดีโอใหม่
-              console.log('ตั้งค่าวิดีโอ...');
-              careerVideo.setAttribute('material', `src: ${videoRef}; side: double; transparent: false`);
+              console.log('ตั้งค่าวิดีโอ...', videoRef);
+              careerVideo.setAttribute('material', `src: ${videoRef}; side: double; transparent: false; shader: flat`);
               careerVideo.setAttribute('visible', 'true');
-              careerVideo.setAttribute('width', '1');
-              careerVideo.setAttribute('height', '0.5625');
-              careerVideo.setAttribute('position', '0 -0.8 0');
+              careerVideo.setAttribute('width', '1.5'); // ขยายขนาดให้เห็นชัดขึ้น
+              careerVideo.setAttribute('height', '0.84');
+              careerVideo.setAttribute('position', '0 -1.2 0'); // ลดลงมาให้เห็นชัด
+              careerVideo.setAttribute('rotation', '0 0 0');
+              
+              // แสดงข้อมูล debug
+              console.log('Career Model Position:', careerModel.getAttribute('position'));
+              console.log('Career Video Position:', careerVideo.getAttribute('position'));
+              console.log('Career Container Visible:', careerContainer.getAttribute('visible'));
               
               // บังคับให้ A-Frame อัพเดต
               careerModel.flushToDOM();
@@ -325,13 +338,18 @@
                 voice.currentTime = 0;
                 voice.play().catch(e => console.warn('ไม่สามารถเล่นเสียงได้:', e));
                 console.log(`เล่นสื่อใหม่: ${careerName} เสร็จแล้ว`);
+                
+                // อัพเดตสถานะสุดท้าย
+                status.textContent = `แสดง: ${careerName} เสร็จแล้ว`;
+                status.style.background = 'rgba(0,255,0,0.7)';
               }, 1000);
               
             }, 500);
             
             // อัพเดตสถานะ
-            status.textContent = `แสดง: ${careerName}`;
-            status.style.background = 'rgba(255,150,0,0.7)';
+            status.textContent = `กำลังโหลด: ${careerName}...`;
+            status.style.background = 'rgba(255,255,0,0.7)';
+            status.style.display = 'block';
             scanFrame.style.display = 'none';
             
           } catch (error) {
