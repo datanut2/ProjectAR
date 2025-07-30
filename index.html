@@ -253,6 +253,17 @@
         console.log('ล้าง cache ทั้งหมดแล้ว');
       }
 
+      // ฟังก์ชันซ่อนโมเดล (ใช้ในกรณีทั่วไป)
+      function hideAllModels() {
+        // ซ่อน marker container (โมเดลจาก Hiro marker)
+        markerContainer.setAttribute('visible', 'false');
+        
+        // ซ่อน career container 
+        careerContainer.setAttribute('visible', 'false');
+        
+        console.log('ซ่อนโมเดลทั้งหมดแล้ว');
+      }
+
       // ฟังก์ชันเปลี่ยนอาชีพ - แสดงกลางจอโดยไม่ต้องสแกน
       function changeCareer(careerName) {
         console.log('เปลี่ยนเป็น:', careerName);
@@ -320,7 +331,6 @@
           scanFrame.style.display = 'none';
         }, 500); // เพิ่มเวลารอให้แคชล้างสมบูรณ์
       }
-      }
 
       // ปุ่มอาชีพคลิก
       careerBtn.addEventListener('click', () => {
@@ -343,6 +353,8 @@
           }, 100);
         });
       });
+
+    }; // ปิด window.onload function
     </script>
   </body>
 </html>
