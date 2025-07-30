@@ -37,7 +37,6 @@
   </div>
 
   <audio id="voice" preload="auto"></audio>
-  <video id="side-video" preload="auto" loop muted playsinline crossorigin="anonymous" style="display:none;"></video>
 
   <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true" arjs="sourceType:webcam; debugUIEnabled:false;" style="visibility:hidden;">
     <a-assets>
@@ -67,7 +66,8 @@
     <a-entity camera position="0 1.6 0">
       <a-entity id="fixed-container" visible="false">
         <a-entity id="model-entity" gltf-model="#model-default" animation-mixer position="0 0 -2.5" scale="0.3 0.3 0.3"></a-entity>
-        <a-video id="video-entity" src="#video-default" position="0 -0.8 -2.5" width="1" height="0.5625" autoplay loop muted></a-video>
+        <!-- a-video without muted to allow sound -->
+        <a-video id="video-entity" src="#video-default" position="0 -0.8 -2.5" width="1" height="0.5625" autoplay loop></a-video>
       </a-entity>
     </a-entity>
     <a-entity light="type:ambient; intensity:0.6"></a-entity>
@@ -87,7 +87,7 @@
       const closeBtn = document.getElementById('close-menu');
       const modelEnt = document.getElementById('model-entity');
       const voice = document.getElementById('voice');
-      const sideVideo = document.getElementById('side-video');
+      const videoEntity = document.getElementById('video-entity');
 
       // เปิด AR
       const startAR = () => {
@@ -106,22 +106,25 @@
         status.style.background = 'rgba(0,255,0,0.7)';
         scanFrame.style.display = 'none';
         fixed.setAttribute('visible', 'true');
-        // default media
         setMedia('default');
       });
 
       function setMedia(key) {
         // model
-        const modelAsset = document.getElementById(`model-${key}`);
         modelEnt.setAttribute('gltf-model', `#model-${key}`);
+        
         // audio
         const audioAsset = document.getElementById(`audio-${key}`);
         voice.src = audioAsset.getAttribute('src');
-        voice.currentTime = 0; voice.play().catch(()=>{});
-        // video
-        const videoAsset = document.getElementById(`video-${key}`);
-        sideVideo.src = videoAsset.getAttribute('src');
-        sideVideo.currentTime = 0; sideVideo.play().catch(()=>{});
+        voice.currentTime = 0;
+        voice.play().catch(() => {});
+
+        // video: เปลี่ยน src ของ a-video ในซีน
+        videoEntity.setAttribute('src', `#video-${key}`);
+        // เริ่มเล่นใหม่
+        const aframeVideoEl = document.getElementById(`video-${key}`);
+        aframeVideoEl.currentTime = 0;
+        aframeVideoEl.play().catch(() => {});
       }
 
       // career button
