@@ -332,12 +332,23 @@
               await waitForEntity(careerModel);
               await waitForEntity(careerVideo);
               
-              // ตั้งค่าโมเดลใหม่ (อยู่ด้านหน้า)
+              // ตั้งค่าโมเดลใหม่ (อยู่ด้านหน้า) - ขนาดแตกต่างกันตามอาชีพ
               console.log('ตั้งค่าโมเดล...', modelRef);
               careerModel.setAttribute('gltf-model', modelRef);
               careerModel.setAttribute('animation-mixer', '');
               careerModel.setAttribute('visible', 'true');
-              careerModel.setAttribute('scale', '0.2 0.2 0.2'); 
+              
+              // กำหนดขนาดตามอาชีพ (ขยายทุกอันยกเว้น Cloud)
+              let modelScale;
+              if (careerName === 'Cloud Engineer') {
+                modelScale = '0.2 0.2 0.2'; // ขนาดปกติสำหรับ Cloud
+                console.log('ใช้ขนาดปกติสำหรับ Cloud Engineer');
+              } else {
+                modelScale = '0.3 0.3 0.3'; // ขยายขนาดสำหรับอาชีพอื่น
+                console.log('ขยายขนาดสำหรับ:', careerName);
+              }
+              
+              careerModel.setAttribute('scale', modelScale); 
               careerModel.setAttribute('position', '-0.3 0.2 0.1'); // ซ้าย ด้านหน้า
               careerModel.setAttribute('rotation', '0 45 0'); // หมุนเล็กน้อยเพื่อให้เห็นมุม
               
