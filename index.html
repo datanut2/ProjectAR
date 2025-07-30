@@ -106,56 +106,73 @@
         });
       }
 
-      // ฟังก์ชันโหลด asset แบบ dynamic
+      // ฟังก์ชันโหลด asset แบบ dynamic (สร้างใหม่ทั้งหมดเพื่อแก้ cache)
       function loadAssetDynamic(assetId, src) {
         const assets = document.querySelector('a-assets');
         
-        // ลบ asset เก่าถ้ามี
+        // ลบ asset เก่าถ้ามี (รวมทั้ง A-Frame cache)
         let oldAsset = document.getElementById(assetId);
         if (oldAsset) {
+          // หยุดวิดีโอก่อนลบ
+          if (oldAsset.tagName === 'VIDEO') {
+            oldAsset.pause();
+            oldAsset.removeAttribute('src');
+            oldAsset.load(); // ล้าง buffer
+          }
           oldAsset.remove();
           console.log('ลบ asset เก่า:', assetId);
         }
         
-        // สร้าง asset ใหม่
+        // สร้าง asset ใหม่โดยเพิ่ม timestamp เพื่อป้องกัน cache
+        const timestamp = Date.now();
+        const uniqueId = `${assetId}_${timestamp}`;
+        
         let asset;
         if (src.endsWith('.glb')) {
           asset = document.createElement('a-asset-item');
-          asset.setAttribute('id', assetId);
-          asset.setAttribute('src', src);
+          asset.setAttribute('id', uniqueId);
+          asset.setAttribute('src', `${src}?t=${timestamp}`);
         } else if (src.endsWith('.mp4')) {
           asset = document.createElement('video');
-          asset.setAttribute('id', assetId);
-          asset.setAttribute('src', src);
+          asset.setAttribute('id', uniqueId);
+          asset.setAttribute('src', `${src}?t=${timestamp}`);
           asset.setAttribute('preload', 'auto');
           asset.setAttribute('loop', '');
           asset.setAttribute('muted', '');
           asset.setAttribute('playsinline', '');
           asset.setAttribute('crossorigin', 'anonymous');
+          // บังคับให้โหลดใหม่
+          asset.load();
         }
         
         if (asset) {
           assets.appendChild(asset);
-          console.log('สร้าง asset ใหม่:', assetId, 'src:', src);
+          console.log('สร้าง asset ใหม่:', uniqueId, 'src:', src);
           
           // รอให้โหลดเสร็จ
           return new Promise((resolve) => {
             if (asset.tagName === 'VIDEO') {
-              asset.addEventListener('loadeddata', () => resolve(`#${assetId}`), { once: true });
+              asset.addEventListener('loadeddata', () => {
+                console.log('วิดีโอโหลดเสร็จ:', uniqueId);
+                resolve(`#${uniqueId}`);
+              }, { once: true });
               asset.addEventListener('error', () => {
                 console.error('โหลดวิดีโอไม่สำเร็จ:', src);
-                resolve(`#${assetId}`);
+                resolve(`#${uniqueId}`);
               }, { once: true });
             } else {
-              asset.addEventListener('loaded', () => resolve(`#${assetId}`), { once: true });
+              asset.addEventListener('loaded', () => {
+                console.log('โมเดลโหลดเสร็จ:', uniqueId);
+                resolve(`#${uniqueId}`);
+              }, { once: true });
               asset.addEventListener('error', () => {
                 console.error('โหลดโมเดลไม่สำเร็จ:', src);
-                resolve(`#${assetId}`);
+                resolve(`#${uniqueId}`);
               }, { once: true });
             }
             
             // Timeout เผื่อโหลดไม่สำเร็จ
-            setTimeout(() => resolve(`#${assetId}`), 3000);
+            setTimeout(() => resolve(`#${uniqueId}`), 5000);
           });
         }
         
@@ -204,16 +221,18 @@
         careerVideo.removeAttribute('material');
         
         // หยุดและรีเซ็ตวิดีโอใน A-Frame
-        const currentVideoAsset = document.querySelector('#career-video-asset');
-        if (currentVideoAsset) {
-          currentVideoAsset.pause();
-          currentVideoAsset.currentTime = 0;
-          // บังคับให้ A-Frame ล้าง texture cache
-          if (careerVideo.components.material && careerVideo.components.material.material) {
-            careerVideo.components.material.material.map = null;
-            careerVideo.components.material.material.needsUpdate = true;
+        const currentVideoAssets = document.querySelectorAll('[id^="career-video-asset"]');
+        currentVideoAssets.forEach(videoAsset => {
+          if (videoAsset) {
+            videoAsset.pause();
+            videoAsset.currentTime = 0;
+            // บังคับให้ A-Frame ล้าง texture cache
+            if (careerVideo.components.material && careerVideo.components.material.material) {
+              careerVideo.components.material.material.map = null;
+              careerVideo.components.material.material.needsUpdate = true;
+            }
           }
-        }
+        });
         
         // ลบ career assets เก่าออกจาก DOM
         const assets = document.querySelector('a-assets');
@@ -346,7 +365,8 @@
               }, 100);
               
               // เพิ่มการตรวจสอบวิดีโอ
-              const videoAsset = document.querySelector('#career-video-asset');
+              const videoAssets = document.querySelectorAll('[id^="career-video-asset"]');
+              const videoAsset = videoAssets[videoAssets.length - 1]; // ใช้อันล่าสุด
               if (videoAsset) {
                 console.log('Video asset พบ:', videoAsset.src);
                 console.log('Video ready state:', videoAsset.readyState);
@@ -373,8 +393,10 @@
               
               // รอสักครู่แล้วเล่นสื่อใหม่
               setTimeout(() => {
-                // หาและเล่นวิดีโอที่ถูกต้อง
-                const videoElement = document.querySelector('#career-video-asset');
+                // หาและเล่นวิดีโอที่ถูกต้อง (ใช้อันล่าสุดที่สร้าง)
+                const videoElements = document.querySelectorAll('[id^="career-video-asset"]');
+                const videoElement = videoElements[videoElements.length - 1]; // ใช้อันล่าสุด
+                
                 if (videoElement) {
                   console.log('=== วิดีโอที่กำลังโหลด ===');
                   console.log('Career Name:', careerName);
