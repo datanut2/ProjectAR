@@ -23,7 +23,6 @@
       pointer-events: none;
       box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.4);
     }
-
     #status {
       position: fixed;
       bottom: 20px;
@@ -43,6 +42,9 @@
 
   <!-- สถานะ -->
   <div id="status">กำลังค้นหา Hiro Marker...</div>
+
+  <!-- เพิ่ม audio element สำหรับเสียงพูด -->
+  <audio id="voice" src="voice.mp3" preload="auto"></audio>
 
   <!-- AR Scene -->
   <a-scene 
@@ -76,19 +78,30 @@
       const status = document.getElementById('status');
       const marker = document.querySelector('#hiro-marker');
       const modelEntity = document.querySelector('#model-entity');
+      const voice = document.getElementById('voice');
 
       // เมื่อเจอ Hiro marker
       marker.addEventListener('markerFound', function() {
         console.log('เจอ Hiro Marker');
         status.textContent = 'พบ Hiro Marker!';
         status.style.background = 'rgba(0, 255, 0, 0.7)';
+        // เล่นเสียงพูด
+        voice.currentTime = 0;
+        voice.play().catch(e => console.warn('Autoplay blocked:', e));
+        // เริ่ม animation-mixer ถ้ามี
+        const mixer = modelEntity.components['animation-mixer'];
+        if (mixer) {
+          mixer.mixer.time = 0;
+          mixer.play();
+        }
       });
 
-      // เมื่อ Hiro marker หายไป
+      // เมื่อ Hiro marker หายไป (ไม่ซ่อนโมเดล/ไม่หยุดเสียง)
       marker.addEventListener('markerLost', function() {
         console.log('Hiro Marker หายไป');
         status.textContent = 'กำลังค้นหา Hiro Marker...';
         status.style.background = 'rgba(0, 0, 0, 0.7)';
+        // ไม่ทำอะไรเพิ่มเติม ปล่อยให้เสียงและโมเดลทำงานต่อ
       });
 
       // ตรวจสอบการโหลดโมเดล
