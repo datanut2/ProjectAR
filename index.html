@@ -23,9 +23,9 @@
   </style>
 </head>
 <body style="margin:0; overflow:hidden;">
-  <div class="scan-frame"></div>
-  <div id="status">321กำลังค้นหา Hiro Marker...</div>
-  <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
+  <div class="scan-frame" style="display:none;"></div>
+  <div id="status">พร้อมใช้งาน</div>
+  <div id="unlock">แตะหน้าจอเพื่อเริ่มดู AR</div>
   <!-- ปุ่มอาชีพ -->
   <button id="career-btn">อาชีพที่น่าสนใจ</button>
 
@@ -42,24 +42,15 @@
   <audio id="voice" src="voice.mp3" preload="auto"></audio>
   <video id="side-video" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous" style="display:none;"></video>
 
-  <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true" arjs="sourceType:webcam; debugUIEnabled:false;" style="visibility:hidden;">
+  <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true" style="visibility:hidden;">
     <a-assets>
       <!-- โมเดลพื้นฐาน -->
       <a-asset-item id="animated-model" src="model.glb"></a-asset-item>
-      <!-- โมเดลอาชีพ -->
-      <a-asset-item id="network-model" src="network-model.glb"></a-asset-item>
-      <a-asset-item id="cloud-model" src="cloud-model.glb"></a-asset-item>
-      <a-asset-item id="ai-model" src="ai-model.glb"></a-asset-item>
-      <a-asset-item id="dc-model" src="dc-model.glb"></a-asset-item>
-      <!-- วิดีโออาชีพ -->
-      <video id="network-video" src="video-network.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
-      <video id="cloud-video" src="video-cloud.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
-      <video id="ai-video" src="video-ai.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
-      <video id="dc-video" src="video-dc.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
+      <!-- โมเดลอาชีพ - โหลดเฉพาะเมื่อต้องการ -->
     </a-assets>
-    <a-marker preset="hiro" id="hiro-marker"></a-marker>
+    <!-- ไม่ใช้ marker แล้ว -->
     <a-entity id="camera-wrapper" camera position="0 1.6 0">
-      <a-entity id="fixed-container" visible="false">
+      <a-entity id="fixed-container" visible="true">
         <a-entity id="model-entity" gltf-model="#animated-model" animation-mixer position="0 0 -2.5" scale="0.3 0.3 0.3"></a-entity>
         <a-video id="video-entity" src="#side-video" position="0 -0.8 -2.5" width="1" height="0.5625" autoplay loop muted></a-video>
       </a-entity>
@@ -71,10 +62,8 @@
   <script>
     window.onload = () => {
       const unlockBtn = document.getElementById('unlock');
-      const scanFrame = document.querySelector('.scan-frame');
       const status = document.getElementById('status');
       const arScene = document.getElementById('ar-scene');
-      const marker = document.getElementById('hiro-marker');
       const fixedCont = document.getElementById('fixed-container');
       const modelEntity = document.getElementById('model-entity');
       const videoEntity = document.getElementById('video-entity');
@@ -84,22 +73,55 @@
       const menu = document.getElementById('career-menu');
       const closeBtn = document.getElementById('close-menu');
 
-      // เปิด AR หลังคลิก
+      // เปิด AR หลังคลิก - แสดงโมเดลทันที
       const startAR = () => {
-        voice.play().then(() => voice.pause()); sideVideo.play().then(() => sideVideo.pause());
-        unlockBtn.style.display = 'none'; scanFrame.style.display = 'block'; status.style.display = 'block'; arScene.style.visibility = 'visible';
-        careerBtn.style.display = 'block'; // แสดงปุ่มอาชีพ
+        voice.play().then(() => voice.pause()); 
+        sideVideo.play().then(() => sideVideo.pause());
+        unlockBtn.style.display = 'none'; 
+        status.style.display = 'block'; 
+        status.textContent = 'โมเดลพื้นฐาน';
+        status.style.background = 'rgba(0,150,255,0.7)';
+        arScene.style.visibility = 'visible';
+        careerBtn.style.display = 'block';
+        
+        // เล่นเสียงและวิดีโอเริ่มต้น
+        setTimeout(() => {
+          voice.currentTime = 0;
+          voice.play().catch(e => console.warn(e));
+          sideVideo.currentTime = 0;
+          sideVideo.play().catch(e => console.warn(e));
+        }, 500);
+        
         document.body.removeEventListener('click', startAR);
       };
       document.body.addEventListener('click', startAR);
 
-      // พบ marker
-      marker.addEventListener('markerFound', () => {
-        status.textContent = 'พบ Hiro Marker!'; status.style.background = 'rgba(0,255,0,0.7)'; scanFrame.style.display = 'none'; fixedCont.setAttribute('visible','true');
-        sideVideo.currentTime = 0; sideVideo.play().catch(e=>console.warn(e)); setTimeout(()=>{ voice.currentTime=0; voice.play().catch(e=>console.warn(e)); },1000);
-      });
+      // ฟังก์ชันโหลดไฟล์แบบ Dynamic (ไม่โหลดทุกไฟล์ตั้งแต่แรก)
+      function loadAssetDynamic(assetId, src) {
+        const assets = document.querySelector('a-assets');
+        let asset = document.getElementById(assetId);
+        
+        if (!asset) {
+          if (src.endsWith('.glb')) {
+            asset = document.createElement('a-asset-item');
+            asset.setAttribute('id', assetId);
+            asset.setAttribute('src', src);
+          } else if (src.endsWith('.mp4')) {
+            asset = document.createElement('video');
+            asset.setAttribute('id', assetId);
+            asset.setAttribute('src', src);
+            asset.setAttribute('preload', 'auto');
+            asset.setAttribute('loop', '');
+            asset.setAttribute('muted', '');
+            asset.setAttribute('playsinline', '');
+            asset.setAttribute('crossorigin', 'anonymous');
+          }
+          assets.appendChild(asset);
+        }
+        return `#${assetId}`;
+      }
 
-      // ฟังก์ชันเปลี่ยนอาชีพ
+      // ฟังก์ชันเปลี่ยนอาชีพ - โหลดไฟล์เฉพาะเมื่อต้องการ
       function changeCareer(careerName) {
         console.log('เปลี่ยนเป็น:', careerName);
         
@@ -109,29 +131,29 @@
         sideVideo.pause();
         sideVideo.currentTime = 0;
         
-        // กำหนดไฟล์ตามอาชีพ
+        // กำหนดไฟล์ตามอาชีพ - ใช้ model.glb เป็นหลัก
         let modelSrc, videoSrc, audioSrc;
         
         switch(careerName) {
           case 'Network Security':
-            modelSrc = '#network-model';
-            videoSrc = '#network-video';
-            audioSrc = 'voice-network.mp3';
+            modelSrc = loadAssetDynamic('network-model', 'model.glb'); // ใช้ model.glb
+            videoSrc = loadAssetDynamic('network-video', 'career-video.mp4'); // ใช้วิดีโอหลัก
+            audioSrc = 'voice.mp3'; // ใช้เสียงหลัก
             break;
           case 'Cloud Engineer':
-            modelSrc = '#cloud-model';
-            videoSrc = '#cloud-video';
-            audioSrc = 'voice-cloud.mp3';
+            modelSrc = loadAssetDynamic('cloud-model', 'model.glb');
+            videoSrc = loadAssetDynamic('cloud-video', 'career-video.mp4');
+            audioSrc = 'voice.mp3';
             break;
           case 'AI Engineer':
-            modelSrc = '#ai-model';
-            videoSrc = '#ai-video';
-            audioSrc = 'voice-ai.mp3';
+            modelSrc = loadAssetDynamic('ai-model', 'model.glb');
+            videoSrc = loadAssetDynamic('ai-video', 'career-video.mp4');
+            audioSrc = 'voice.mp3';
             break;
           case 'Data Center':
-            modelSrc = '#dc-model';
-            videoSrc = '#dc-video';
-            audioSrc = 'voice-dc.mp3';
+            modelSrc = loadAssetDynamic('dc-model', 'model.glb');
+            videoSrc = loadAssetDynamic('dc-video', 'career-video.mp4');
+            audioSrc = 'voice.mp3';
             break;
           default:
             modelSrc = '#animated-model';
@@ -155,7 +177,7 @@
         
         // อัพเดตสถานะ
         status.textContent = `แสดง: ${careerName}`;
-        status.style.background = 'rgba(0,150,255,0.7)';
+        status.style.background = 'rgba(255,150,0,0.7)';
       }
 
       // ปุ่มอาชีพคลิก
