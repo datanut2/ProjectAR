@@ -24,7 +24,7 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">11กำลังค้นหา Hiro Marker...</div>
+  <div id="status">22กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
   <!-- ปุ่มอาชีพ -->
   <button id="career-btn">อาชีพที่น่าสนใจ</button>
@@ -284,21 +284,20 @@
           
           switch(careerName) {
             case 'Test Model':
-              // ใช้ marker content แทน career content (แสดงผ่าน marker)
-              markerContainer.setAttribute('visible', 'true');
+              // สำหรับ Test Model ให้ใช้การสแกน marker แบบเดิม
+              console.log('เลือก Test Model - ต้องสแกน marker');
+              
+              // ซ่อน career container และกลับไปใช้ marker scanning
               careerContainer.setAttribute('visible', 'false');
+              markerContainer.setAttribute('visible', 'false'); // ซ่อนก่อน รอให้สแกน
               
-              // เล่นสื่อจาก marker (ไฟล์เดิม)
-              sideVideo.currentTime = 0; 
-              sideVideo.play().catch(e=>console.warn(e)); 
-              setTimeout(()=>{ 
-                voice.currentTime=0; 
-                voice.play().catch(e=>console.warn(e)); 
-              },1000);
+              // อัพเดตสถานะ
+              status.textContent = 'กรุณาสแกน Hiro Marker เพื่อดู Test Model';
+              status.style.background = 'rgba(255,150,0,0.7)';
+              scanFrame.style.display = 'block'; // แสดงกรอบสแกนอีกครั้ง
               
-              status.textContent = 'แสดง: โมเดลต้นฉบับ (ไม่ต้องสแกน marker)';
-              status.style.background = 'rgba(0,255,0,0.7)';
-              scanFrame.style.display = 'none';
+              // รีเซ็ต markerFound เพื่อให้สามารถสแกนใหม่ได้
+              markerFound = false;
               
               // ออกจากฟังก์ชันเพื่อไม่ให้ดำเนินการต่อ
               return;
