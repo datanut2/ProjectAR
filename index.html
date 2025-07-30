@@ -11,45 +11,18 @@
   <!-- AR.js for marker detection -->
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
   <style>
-    .scan-frame {
-      position: fixed;
-      top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 280px; height: 280px;
-      border: 3px solid rgba(255,255,255,0.8);
-      border-radius: 20px;
-      box-shadow: 0 0 0 4000px rgba(0,0,0,0.4);
-      display: none; z-index: 1000; pointer-events: none;
-    }
-    #status {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,0.7); color: #fff;
-      padding: 10px 20px; border-radius: 20px;
-      display: none; z-index: 1000;
-    }
-    #unlock {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.8); color: #fff;
-      padding: 15px 30px; border-radius: 10px;
-      font-size: 1.2em; z-index: 1001;
-    }
+    .scan-frame { position: fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:280px; height:280px; border:3px solid rgba(255,255,255,0.8); border-radius:20px; box-shadow:0 0 0 4000px rgba(0,0,0,0.4); display:none; z-index:1000; pointer-events:none; }
+    #status { position: fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:#fff; padding:10px 20px; border-radius:20px; display:none; z-index:1000; }
+    #unlock { position: fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 30px; border-radius:10px; font-size:1.2em; z-index:1001; }
     /* เมนูเลือกอาชีพ */
-    #career-menu {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.85); padding: 20px; border-radius: 10px;
-      display: none; z-index: 1002; color: #fff;
-    }
-    #career-menu h3 { margin-top: 0; }
-    #career-menu button {
-      display: block; width: 200px; margin: 10px auto;
-      padding: 10px; font-size: 1em;
-      border: none; border-radius: 5px;
-      cursor: pointer;
-    }
+    #career-menu { position: fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,0,0,0.85); padding:20px; border-radius:10px; display:none; z-index:1002; color:#fff; }
+    #career-menu h3 { margin-top:0; }
+    #career-menu button { display:block; width:200px; margin:10px auto; padding:10px; font-size:1em; border:none; border-radius:5px; cursor:pointer; }
   </style>
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">กำลังค้นหา Hiro Marker...</div>
+  <div id="status">333กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
 
   <!-- เมนูเลือกอาชีพ -->
@@ -65,11 +38,7 @@
   <audio id="voice" src="voice.mp3" preload="auto"></audio>
   <video id="side-video" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous" style="display:none;"></video>
 
-  <a-scene id="ar-scene"
-           embedded vr-mode-ui="enabled:false"
-           renderer="logarithmicDepthBuffer:true"
-           arjs="sourceType: webcam; debugUIEnabled: false;"
-           style="visibility:hidden;">
+  <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true" arjs="sourceType:webcam; debugUIEnabled:false;" style="visibility:hidden;">
 
     <a-assets>
       <a-asset-item id="animated-model" src="model.glb"></a-asset-item>
@@ -78,32 +47,18 @@
     <a-marker preset="hiro" id="hiro-marker"></a-marker>
 
     <a-entity id="camera-wrapper" camera position="0 1.6 0">
+      <!-- cursor for mouse clicks -->
+      <a-entity cursor="rayOrigin: mouse; fuse: false" raycaster="objects:.clickable"></a-entity>
+
       <a-entity id="fixed-container" visible="false">
-        <a-entity id="model-entity"
-                  gltf-model="#animated-model"
-                  animation-mixer
-                  raycaster="objects: .clickable"
-                  class="clickable"
-                  position="0 0 -2.5"
-                  scale="0.3 0.3 0.3">
-        </a-entity>
-        <a-video id="video-entity"
-                 src="#side-video"
-                 position="0 -0.8 -2.5"
-                 width="1" height="0.5625"
-                 autoplay loop muted>
-        </a-video>
+        <a-entity id="model-entity" class="clickable" gltf-model="#animated-model" animation-mixer position="0 0 -2.5" scale="0.3 0.3 0.3"></a-entity>
+        <a-video id="video-entity" src="#side-video" position="0 -0.8 -2.5" width="1" height="0.5625" autoplay loop muted></a-video>
       </a-entity>
     </a-entity>
 
-    <!-- แสงสว่างเสริม -->
-    <a-entity light="type: ambient; intensity: 0.6"></a-entity>
-    <a-entity light="type: directional; intensity: 0.8" position="-1 1 0"></a-entity>
-
-    <!-- cursor สำหรับคลิก -->
-    <a-entity cursor="fuse: false; rayOrigin: mouse"
-              raycaster="objects: .clickable">
-    </a-entity>
+    <!-- lights -->
+    <a-entity light="type: ambient; intensity:0.6"></a-entity>
+    <a-entity light="type: directional; intensity:0.8" position="-1 1 0"></a-entity>
   </a-scene>
 
   <script>
@@ -120,56 +75,32 @@
       const menu = document.getElementById('career-menu');
       const closeBtn = document.getElementById('close-menu');
 
-      // ปลดล็อค media
+      // unlock media
       const startAR = () => {
-        voice.play().then(() => voice.pause());
-        sideVideo.play().then(() => sideVideo.pause());
-        unlockBtn.style.display = 'none';
-        scanFrame.style.display = 'block';
-        status.style.display = 'block';
-        arScene.style.visibility = 'visible';
+        voice.play().then(() => voice.pause()); sideVideo.play().then(() => sideVideo.pause());
+        unlockBtn.style.display = 'none'; scanFrame.style.display = 'block'; status.style.display = 'block'; arScene.style.visibility = 'visible';
         document.body.removeEventListener('click', startAR);
       };
       document.body.addEventListener('click', startAR);
 
-      // markerFound
+      // marker found
       marker.addEventListener('markerFound', () => {
-        status.textContent = 'พบ Hiro Marker!';
-        status.style.background = 'rgba(0,255,0,0.7)';
-        scanFrame.style.display = 'none';
-        fixedCont.setAttribute('visible', 'true');
-        sideVideo.currentTime = 0;
-        sideVideo.play().catch(e => console.warn(e));
-        setTimeout(() => { voice.currentTime = 0; voice.play().catch(e => console.warn(e)); }, 1000);
+        status.textContent = 'พบ Hiro Marker!'; status.style.background = 'rgba(0,255,0,0.7)'; scanFrame.style.display = 'none'; fixedCont.setAttribute('visible','true');
+        sideVideo.currentTime = 0; sideVideo.play().catch(e=>console.warn(e)); setTimeout(()=>{ voice.currentTime=0; voice.play().catch(e=>console.warn(e)); },1000);
       });
 
-      // markerLost
-      marker.addEventListener('markerLost', () => {
-        status.textContent = 'กำลังค้นหา Hiro Marker...';
-        status.style.background = 'rgba(0,0,0,0.7)';
-        scanFrame.style.display = 'block';
-        fixedCont.setAttribute('visible', 'false');
-      });
-
-            // คลิกที่โมเดล ผ่าน event ของ a-scene
-      arScene.addEventListener('click', (e) => {
-        const clicked = e.detail.intersectedEl;
-        if (clicked && clicked.id === 'model-entity') {
+      // click handler via raycaster
+      arScene.addEventListener('click', e => {
+        const el = e.detail.intersectedEl;
+        if (el && el.id === 'model-entity') {
           menu.style.display = 'block';
         }
       });
 
-      // ปิดเมนู
-      closeBtn.addEventListener('click', () => {
-        menu.style.display = 'none';
-      });
-
-      // ปุ่มเลือกอาชีพ
-      menu.querySelectorAll('button[data-career]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          alert('คุณเลือก: ' + btn.getAttribute('data-career'));
-        });
-      });
+      // close menu
+      closeBtn.addEventListener('click', () => menu.style.display = 'none');
+      // career buttons
+      menu.querySelectorAll('button[data-career]').forEach(btn => btn.addEventListener('click', () => alert('คุณเลือก: ' + btn.getAttribute('data-career'))));
     };
   </script>
 </body>
