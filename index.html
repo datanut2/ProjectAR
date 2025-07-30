@@ -23,7 +23,7 @@
 </head>
 <body style="margin:0; overflow:hidden; background: transparent;">
   <div class="scan-frame"></div>
-  <div id="status">กำลังค้นหา Hiro Marker...</div>
+  <div id="status">11กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
   <button id="career-btn">อาชีพที่น่าสนใจ</button>
 
@@ -36,12 +36,8 @@
     <button id="close-menu">ปิด</button>
   </div>
 
-  <audio id="voice" preload="auto"></audio>
-  <video id="side-video" preload="auto" loop muted playsinline crossorigin="anonymous" style="display:none;"></video>
-
-  <a-scene id="ar-scene"
-           embedded
-           vr-mode-ui="enabled:false"
+  <!-- สื่อทั้งหมดเก็บใน assets -->
+  <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false"
            renderer="logarithmicDepthBuffer:true; alpha:true"
            background="color: transparent"
            arjs="sourceType: webcam; debugUIEnabled: false;"
@@ -50,30 +46,30 @@
       <!-- default assets -->
       <a-asset-item id="model-default" src="model.glb"></a-asset-item>
       <audio id="audio-default" src="voice.mp3"></audio>
-      <video id="video-default" src="career-video.mp4"></video>
+      <video id="video-default" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
       <!-- network security -->
       <a-asset-item id="model-network" src="network-model.glb"></a-asset-item>
       <audio id="audio-network" src="voice-network.mp3"></audio>
-      <video id="video-network" src="video-network.mp4"></video>
+      <video id="video-network" src="video-network.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
       <!-- cloud engineer -->
       <a-asset-item id="model-cloud" src="cloud-model.glb"></a-asset-item>
       <audio id="audio-cloud" src="voice-cloud.mp3"></audio>
-      <video id="video-cloud" src="video-cloud.mp4"></video>
+      <video id="video-cloud" src="video-cloud.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
       <!-- ai engineer -->
       <a-asset-item id="model-ai" src="ai-model.glb"></a-asset-item>
       <audio id="audio-ai" src="voice-ai.mp3"></audio>
-      <video id="video-ai" src="video-ai.mp4"></video>
+      <video id="video-ai" src="video-ai.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
       <!-- data center -->
       <a-asset-item id="model-dc" src="dc-model.glb"></a-asset-item>
       <audio id="audio-dc" src="voice-dc.mp3"></audio>
-      <video id="video-dc" src="video-dc.mp4"></video>
+      <video id="video-dc" src="video-dc.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
     </a-assets>
 
     <a-marker preset="hiro" id="hiro-marker"></a-marker>
     <a-entity camera position="0 1.6 0">
       <a-entity id="fixed-container" visible="false">
         <a-entity id="model-entity" gltf-model="#model-default" animation-mixer position="0 0 -2.5" scale="0.3 0.3 0.3"></a-entity>
-        <a-video id="video-entity" src="#video-default" position="0 -0.8 -2.5" width="1" height="0.5625" autoplay loop muted></a-video>
+        <a-video id="video-entity" src="#video-default" position="0 -0.8 -2.5" width="1" height="0.5625" autoplay loop muted playsinline></a-video>
       </a-entity>
     </a-entity>
     <a-entity light="type:ambient; intensity:0.6"></a-entity>
@@ -92,11 +88,15 @@
       const menu = document.getElementById('career-menu');
       const closeBtn = document.getElementById('close-menu');
       const modelEnt = document.getElementById('model-entity');
-      const voice = document.getElementById('voice');
-      const sideVideo = document.getElementById('side-video');
+      const voice = document.getElementById('audio-default');
+      const sideVideo = document.getElementById('video-default');
 
       // เปิด AR
       const startAR = () => {
+        // ทริกเกอร์ preload สื่อ
+        voice.play().then(() => voice.pause());
+        sideVideo.play().then(() => sideVideo.pause());
+
         unlockBtn.style.display = 'none';
         scanFrame.style.display = 'block';
         status.style.display = 'block';
@@ -112,28 +112,33 @@
         status.style.background = 'rgba(0,255,0,0.7)';
         scanFrame.style.display = 'none';
         fixed.setAttribute('visible', 'true');
-        // default media
-        setMedia('default');
+
+        // เล่น default media
+        sideVideo.currentTime = 0;
+        sideVideo.play().catch(e => console.warn(e));
+        setTimeout(() => {
+          voice.currentTime = 0;
+          voice.play().catch(e => console.warn(e));
+        }, 500);
       });
 
       function setMedia(key) {
-        // model
-        const modelAsset = document.getElementById(`model-${key}`);
+        // เปลี่ยนโมเดล
         modelEnt.setAttribute('gltf-model', `#model-${key}`);
-        // audio
-        const audioAsset = document.getElementById(`audio-${key}`);
-        voice.src = audioAsset.getAttribute('src');
-        voice.currentTime = 0; voice.play().catch(()=>{});
-        // video
-        const videoAsset = document.getElementById(`video-${key}`);
-        sideVideo.src = videoAsset.getAttribute('src');
-        sideVideo.currentTime = 0; sideVideo.play().catch(()=>{});
+        // เปลี่ยนเสียง
+        const audioEl = document.getElementById(`audio-${key}`);
+        voice.src = audioEl.getAttribute('src');
+        voice.currentTime = 0;
+        voice.play().catch(() => {});
+        // เปลี่ยนวิดีโอ
+        const videoEl = document.getElementById(`video-${key}`);
+        sideVideo.src = videoEl.getAttribute('src');
+        sideVideo.currentTime = 0;
+        sideVideo.play().catch(() => {});
       }
 
-      // career button
-      careerBtn.addEventListener('click', () => {
-        menu.style.display = 'block';
-      });
+      // ปุ่มอาชีพ
+      careerBtn.addEventListener('click', () => menu.style.display = 'block');
       closeBtn.addEventListener('click', () => menu.style.display = 'none');
       menu.querySelectorAll('button[data-career]').forEach(btn => {
         btn.addEventListener('click', () => {
