@@ -24,7 +24,7 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">กำลังค้นหา Hiro Marker...</div>
+  <div id="status">321กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
   <!-- ปุ่มอาชีพ -->
   <button id="career-btn">อาชีพที่น่าสนใจ</button>
@@ -32,10 +32,10 @@
   <!-- เมนูเลือกอาชีพ -->
   <div id="career-menu">
     <h3>เลือกสายงาน</h3>
-    <button data-career="network">Network Security</button>
-    <button data-career="cloud">Cloud Engineer</button>
-    <button data-career="ai">AI Engineer</button>
-    <button data-career="dc">Data Center</button>
+    <button data-career="Network Security">Network Security</button>
+    <button data-career="Cloud Engineer">Cloud Engineer</button>
+    <button data-career="AI Engineer">AI Engineer</button>
+    <button data-career="Data Center">Data Center</button>
     <button id="close-menu">ปิด</button>
   </div>
 
@@ -44,12 +44,14 @@
 
   <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true" arjs="sourceType:webcam; debugUIEnabled:false;" style="visibility:hidden;">
     <a-assets>
+      <!-- โมเดลพื้นฐาน -->
       <a-asset-item id="animated-model" src="model.glb"></a-asset-item>
-      <!-- อาชีพ assets -->
+      <!-- โมเดลอาชีพ -->
       <a-asset-item id="network-model" src="network-model.glb"></a-asset-item>
       <a-asset-item id="cloud-model" src="cloud-model.glb"></a-asset-item>
       <a-asset-item id="ai-model" src="ai-model.glb"></a-asset-item>
       <a-asset-item id="dc-model" src="dc-model.glb"></a-asset-item>
+      <!-- วิดีโออาชีพ -->
       <video id="network-video" src="video-network.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
       <video id="cloud-video" src="video-cloud.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
       <video id="ai-video" src="video-ai.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
@@ -81,77 +83,78 @@
       const careerBtn = document.getElementById('career-btn');
       const menu = document.getElementById('career-menu');
       const closeBtn = document.getElementById('close-menu');
-      let anchored = false;
 
       // เปิด AR หลังคลิก
       const startAR = () => {
-        voice.play().then(() => voice.pause()); 
-        sideVideo.play().then(() => sideVideo.pause());
-        unlockBtn.style.display = 'none'; 
-        scanFrame.style.display = 'block'; 
-        status.style.display = 'block'; 
-        arScene.style.visibility = 'visible';
+        voice.play().then(() => voice.pause()); sideVideo.play().then(() => sideVideo.pause());
+        unlockBtn.style.display = 'none'; scanFrame.style.display = 'block'; status.style.display = 'block'; arScene.style.visibility = 'visible';
         careerBtn.style.display = 'block'; // แสดงปุ่มอาชีพ
         document.body.removeEventListener('click', startAR);
       };
       document.body.addEventListener('click', startAR);
 
-      // พบ marker - โมเดลและวิดีโอจะแสดงและคงอยู่
+      // พบ marker
       marker.addEventListener('markerFound', () => {
-        status.textContent = 'พบ Hiro Marker!'; 
-        status.style.background = 'rgba(0,255,0,0.7)'; 
-        scanFrame.style.display = 'none'; 
-        fixedCont.setAttribute('visible','true');
-        sideVideo.currentTime = 0; 
-        sideVideo.play().catch(e=>console.warn(e)); 
-        setTimeout(()=>{ 
-          voice.currentTime=0; 
-          voice.play().catch(e=>console.warn(e)); 
-        },1000);
-        anchored = true;
+        status.textContent = 'พบ Hiro Marker!'; status.style.background = 'rgba(0,255,0,0.7)'; scanFrame.style.display = 'none'; fixedCont.setAttribute('visible','true');
+        sideVideo.currentTime = 0; sideVideo.play().catch(e=>console.warn(e)); setTimeout(()=>{ voice.currentTime=0; voice.play().catch(e=>console.warn(e)); },1000);
       });
 
       // ฟังก์ชันเปลี่ยนอาชีพ
-      function changeCareer(careerType) {
-        console.log('เปลี่ยนอาชีพเป็น:', careerType);
+      function changeCareer(careerName) {
+        console.log('เปลี่ยนเป็น:', careerName);
+        
+        // หยุดเสียงและวิดีโอเก่า
+        voice.pause();
+        voice.currentTime = 0;
+        sideVideo.pause();
+        sideVideo.currentTime = 0;
+        
+        // กำหนดไฟล์ตามอาชีพ
+        let modelSrc, videoSrc, audioSrc;
+        
+        switch(careerName) {
+          case 'Network Security':
+            modelSrc = '#network-model';
+            videoSrc = '#network-video';
+            audioSrc = 'voice-network.mp3';
+            break;
+          case 'Cloud Engineer':
+            modelSrc = '#cloud-model';
+            videoSrc = '#cloud-video';
+            audioSrc = 'voice-cloud.mp3';
+            break;
+          case 'AI Engineer':
+            modelSrc = '#ai-model';
+            videoSrc = '#ai-video';
+            audioSrc = 'voice-ai.mp3';
+            break;
+          case 'Data Center':
+            modelSrc = '#dc-model';
+            videoSrc = '#dc-video';
+            audioSrc = 'voice-dc.mp3';
+            break;
+          default:
+            modelSrc = '#animated-model';
+            videoSrc = '#side-video';
+            audioSrc = 'voice.mp3';
+        }
         
         // เปลี่ยนโมเดล
-        let modelSrc = '#animated-model'; // default
-        if (careerType === 'network') modelSrc = '#network-model';
-        else if (careerType === 'cloud') modelSrc = '#cloud-model';
-        else if (careerType === 'ai') modelSrc = '#ai-model';
-        else if (careerType === 'dc') modelSrc = '#dc-model';
-        
         modelEntity.setAttribute('gltf-model', modelSrc);
         
         // เปลี่ยนวิดีโอ
-        let videoSrc = '#side-video'; // default
-        if (careerType === 'network') videoSrc = '#network-video';
-        else if (careerType === 'cloud') videoSrc = '#cloud-video';
-        else if (careerType === 'ai') videoSrc = '#ai-video';
-        else if (careerType === 'dc') videoSrc = '#dc-video';
-        
         videoEntity.setAttribute('src', videoSrc);
         
         // เปลี่ยนเสียง
-        let audioSrc = 'voice.mp3'; // default
-        if (careerType === 'network') audioSrc = 'voice-network.mp3';
-        else if (careerType === 'cloud') audioSrc = 'voice-cloud.mp3';
-        else if (careerType === 'ai') audioSrc = 'voice-ai.mp3';
-        else if (careerType === 'dc') audioSrc = 'voice-dc.mp3';
-        
         voice.src = audioSrc;
-        voice.currentTime = 0;
-        voice.play().catch(e => console.warn(e));
+        
+        // เล่นสื่อใหม่หลังจากเปลี่ยนแล้ว
+        setTimeout(() => {
+          voice.play().catch(e => console.warn('ไม่สามารถเล่นเสียงได้:', e));
+        }, 500);
         
         // อัพเดตสถานะ
-        const careerNames = {
-          'network': 'Network Security',
-          'cloud': 'Cloud Engineer',
-          'ai': 'AI Engineer',
-          'dc': 'Data Center'
-        };
-        status.textContent = 'แสดง: ' + careerNames[careerType];
+        status.textContent = `แสดง: ${careerName}`;
         status.style.background = 'rgba(0,150,255,0.7)';
       }
 
@@ -165,15 +168,14 @@
         menu.style.display = 'none';
       });
       
-      // ปุ่มสายงาน - เมื่อกดจะเปลี่ยนโมเดล วิดีโอ และเสียงทันที
+      // ปุ่มสายงาน - เปลี่ยนโมเดล วิดีโอ และเสียงตามที่เลือก
       menu.querySelectorAll('button[data-career]').forEach(btn => {
         btn.addEventListener('click', () => {
-          const career = btn.getAttribute('data-career');
-          changeCareer(career);
+          const careerName = btn.getAttribute('data-career');
+          changeCareer(careerName);
           menu.style.display = 'none';
-          // แจ้งเตือนว่าเลือกอะไร
           setTimeout(() => {
-            alert('คุณเลือก: ' + btn.textContent);
+            alert('คุณเลือก: ' + careerName);
           }, 100);
         });
       });
