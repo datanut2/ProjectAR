@@ -35,7 +35,6 @@
 
   <a-scene embedded arjs="sourceType:webcam; debugUIEnabled:false;">
     <a-assets>
-      <!-- default -->
       <a-asset-item id="model-default" src="model.glb"></a-asset-item>
       <audio id="audio-default" src="voice.mp3"></audio>
       <video id="video-default" src="career-video.mp4"></video>
@@ -54,15 +53,16 @@
       <video id="video-dc" src="video-dc.mp4"></video>
     </a-assets>
 
-    <a-marker preset="hiro" id="hiro-marker">
-      <!-- ตำแหน่งเหมือน default -->
-      <a-entity id="fixed-container" visible="false">
-        <a-entity id="model-entity" gltf-model="#model-default" animation-mixer position="0 0 -2.5" scale="0.3 0.3 0.3"></a-entity>
-        <a-video id="video-entity" src="#video-default" position="0 -0.8 -2.5" width="1" height="0.5625" autoplay loop></a-video>
-      </a-entity>
-    </a-marker>
+    <!-- Marker for default scan -->
+    <a-marker preset="hiro" id="hiro-marker"></a-marker>
 
-    <a-entity camera></a-entity>
+    <!-- Container for model/video displayed on button click -->
+    <a-entity id="fixed-container" visible="false">
+      <a-entity id="model-entity" gltf-model="#model-default" animation-mixer position="0 0 -2.5" scale="0.3 0.3 0.3"></a-entity>
+      <a-video id="video-entity" src="#video-default" position="0 -0.8 -2.5" width="1" height="0.5625" autoplay loop></a-video>
+    </a-entity>
+
+    <a-entity camera position="0 1.6 0"></a-entity>
     <a-entity light="type:ambient; intensity:0.6"></a-entity>
     <a-entity light="type:directional; intensity:0.8" position="-1 1 0"></a-entity>
   </a-scene>
@@ -72,7 +72,7 @@
       const unlockBtn = document.getElementById('unlock');
       const scanFrame = document.querySelector('.scan-frame');
       const status = document.getElementById('status');
-      const arScene = document.querySelector('a-scene');
+      const scene = document.querySelector('a-scene');
       const marker = document.getElementById('hiro-marker');
       const fixed = document.getElementById('fixed-container');
       const careerBtn = document.getElementById('career-btn');
@@ -82,33 +82,45 @@
       const voice = document.getElementById('voice');
       const videoEnt = document.getElementById('video-entity');
 
+      // เริ่ม AR
       document.body.addEventListener('click', function start() {
-        unlockBtn.style.display = 'none'; scanFrame.style.display = 'block';
-        status.style.display = 'block'; arScene.style.visibility = 'visible';
-        careerBtn.style.display = 'block'; document.body.removeEventListener('click', start);
+        unlockBtn.style.display = 'none';
+        scanFrame.style.display = 'block';
+        status.style.display = 'block';
+        scene.style.visibility = 'visible';
+        careerBtn.style.display = 'block';
+        document.body.removeEventListener('click', start);
       });
 
+      // ถ้ามีการสแกน marker ให้โหลด default
       marker.addEventListener('markerFound', () => {
-        status.textContent = 'พบ Hiro Marker!'; status.style.background = 'rgba(0,255,0,0.7)';
-        scanFrame.style.display = 'none'; fixed.setAttribute('visible', true);
-        setMedia('default');
+        status.textContent = 'พบ Hiro Marker!';
+        status.style.background = 'rgba(0,255,0,0.7)';
+        scanFrame.style.display = 'none';
+        // ซ่อน container ที่ปุ่มเรียก เพราะ default ไม่แสดงบน marker
+        fixed.setAttribute('visible', false);
       });
-      marker.addEventListener('markerLost', () => fixed.setAttribute('visible', false));
 
       function setMedia(key) {
+        // เปลี่ยน model
         modelEnt.setAttribute('gltf-model', `#model-${key}`);
+        // เล่นเสียง
         voice.src = document.getElementById(`audio-${key}`).getAttribute('src');
         voice.currentTime = 0; voice.play().catch(() => {});
+        // เปลี่ยนวิดีโอ
         videoEnt.setAttribute('src', `#video-${key}`);
         videoEnt.components.material.material.map.needsUpdate = true;
         const vid = document.getElementById(`video-${key}`);
         vid.currentTime = 0; vid.play().catch(() => {});
+        // แสดงกลางหน้าจอทันทีโดยไม่ต้องสแกน
+        fixed.setAttribute('visible', true);
       }
 
       careerBtn.addEventListener('click', () => menu.style.display = 'block');
       closeBtn.addEventListener('click', () => menu.style.display = 'none');
       menu.querySelectorAll('[data-career]').forEach(btn => btn.onclick = () => {
-        setMedia(btn.getAttribute('data-career')); menu.style.display = 'none';
+        setMedia(btn.getAttribute('data-career'));
+        menu.style.display = 'none';
       });
     };
   </script>
