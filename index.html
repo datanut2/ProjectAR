@@ -24,7 +24,7 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">22กำลังค้นหา Hiro Marker...</div>
+  <div id="status">กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
   <!-- ปุ่มอาชีพ -->
   <button id="career-btn">อาชีพที่น่าสนใจ</button>
@@ -498,7 +498,7 @@
       };
       document.body.addEventListener('click', startAR);
 
-      // พบ marker
+      // พบ marker - แสดงโมเดลหลักและทำให้ sticky
       marker.addEventListener('markerFound', () => {
         status.textContent = 'พบ Hiro Marker!';
         status.style.background = 'rgba(0,255,0,0.7)';
@@ -510,19 +510,17 @@
         markerContainer.setAttribute('visible', 'true');
         
         // เล่นสื่อจาก marker
-        sideVideo.currentTime = 0; 
-        sideVideo.play().catch(e=>console.warn(e)); 
+        const sideVideoElement = document.getElementById('side-video-element');
+        sideVideoElement.currentTime = 0; 
+        sideVideoElement.play().catch(e=>console.warn(e)); 
         setTimeout(()=>{ 
           voice.currentTime=0; 
           voice.play().catch(e=>console.warn(e)); 
         },1000);
       });
 
-      // หาย marker - แต่ยังคงแสดงโมเดลตลอด (sticky display)
+      // หาย marker - โมเดลยังคงแสดงอยู่ (sticky display)
       marker.addEventListener('markerLost', () => {
-        // ไม่ซ่อน marker container แม้ marker หายไป
-        // markerContainer ยังคงแสดงอยู่
-        
         if (!markerFound) {
           status.textContent = 'กำลังค้นหา Hiro Marker...';
           status.style.background = 'rgba(0,0,0,0.7)';
@@ -531,7 +529,7 @@
           status.textContent = 'โมเดลยังคงแสดงอยู่ (ไม่ต้องสแกน marker)';
           status.style.background = 'rgba(0,150,255,0.7)';
           scanFrame.style.display = 'none';
-          // ให้ marker container ยังคงแสดงอยู่
+          // ให้ marker container ยังคงแสดงอยู่ - นี่คือ sticky display
           markerContainer.setAttribute('visible', 'true');
         }
       });
