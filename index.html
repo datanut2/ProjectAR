@@ -62,14 +62,15 @@
       <video id="video-dc" src="video-dc.mp4"></video>
     </a-assets>
 
-    <a-marker preset="hiro" id="hiro-marker"></a-marker>
-    <a-entity camera position="0 1.6 0">
+    <!-- Marker รังสรรค์โมเดลและวิดีโอภายใน -->
+    <a-marker preset="hiro" id="hiro-marker">
       <a-entity id="fixed-container" visible="false">
-        <a-entity id="model-entity" gltf-model="#model-default" animation-mixer position="0 0 -2.5" scale="0.3 0.3 0.3"></a-entity>
-        <!-- a-video without muted to allow sound -->
-        <a-video id="video-entity" src="#video-default" position="0 -0.8 -2.5" width="1" height="0.5625" autoplay loop></a-video>
+        <a-entity id="model-entity" gltf-model="#model-default" animation-mixer position="0 0 0" scale="0.3 0.3 0.3"></a-entity>
+        <a-video id="video-entity" src="#video-default" position="0 -0.8 0" width="1" height="0.5625" autoplay loop></a-video>
       </a-entity>
-    </a-entity>
+    </a-marker>
+    <!-- กล้องต้องอยู่นอก marker -->
+    <a-entity camera position="0 1.6 0"></a-entity>
     <a-entity light="type:ambient; intensity:0.6"></a-entity>
     <a-entity light="type:directional; intensity:0.8" position="-1 1 0"></a-entity>
   </a-scene>
@@ -108,29 +109,30 @@
         fixed.setAttribute('visible', 'true');
         setMedia('default');
       });
+      marker.addEventListener('markerLost', () => {
+        fixed.setAttribute('visible', 'false');
+      });
 
       function setMedia(key) {
-        // model
+        // Model
         modelEnt.setAttribute('gltf-model', `#model-${key}`);
-        
-        // audio
+
+        // Audio
         const audioAsset = document.getElementById(`audio-${key}`);
         voice.src = audioAsset.getAttribute('src');
         voice.currentTime = 0;
         voice.play().catch(() => {});
 
-        // video: เปลี่ยน src ของ a-video ในซีน
+        // Video
         videoEntity.setAttribute('src', `#video-${key}`);
-        // เริ่มเล่นใหม่
-        const aframeVideoEl = document.getElementById(`video-${key}`);
-        aframeVideoEl.currentTime = 0;
-        aframeVideoEl.play().catch(() => {});
+        videoEntity.components.material.material.map.needsUpdate = true;
+        const aframeVidEl = document.getElementById(`video-${key}`);
+        aframeVidEl.currentTime = 0;
+        aframeVidEl.play().catch(() => {});
       }
 
-      // career button
-      careerBtn.addEventListener('click', () => {
-        menu.style.display = 'block';
-      });
+      // ปุ่มเลือกอาชีพ
+      careerBtn.addEventListener('click', () => menu.style.display = 'block');
       closeBtn.addEventListener('click', () => menu.style.display = 'none');
       menu.querySelectorAll('button[data-career]').forEach(btn => {
         btn.addEventListener('click', () => {
