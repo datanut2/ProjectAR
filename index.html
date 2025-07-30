@@ -3,21 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AR Experience with Career Button</title>
+  <title>AR Scanner with Career Button</title>
+  <!-- A-Frame core -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <!-- A-Frame Extras (animation-mixer) -->
+  <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+  <!-- AR.js -->
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
   <style>
-    #unlock, .scan-frame, #status, a-marker { display: none; } /* ซ่อนส่วนที่ไม่ใช้งาน */
-    #career-btn { position: fixed; top: 20px; right: 20px; padding: 10px 15px; background: rgba(0,0,0,0.7); color: #fff; border: none; border-radius: 5px; cursor: pointer; z-index: 1000; }
-    #career-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); padding: 20px; border-radius: 10px; display: none; z-index: 1001; color: #fff; }
-    #career-menu button { display: block; width: 200px; margin: 10px auto; padding: 10px; font-size: 1em; border: none; border-radius: 5px; cursor: pointer; }
+    /* UI */
+    .scan-frame { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:280px; height:280px; border:3px solid rgba(255,255,255,0.8); border-radius:20px; box-shadow:0 0 0 4000px rgba(0,0,0,0.4); display:none; z-index:1000; pointer-events:none; }
+    #status { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:#fff; padding:10px 20px; border-radius:20px; display:none; z-index:1000; }
+    #unlock { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 30px; border-radius:10px; font-size:1.2em; z-index:1001; }
+    #career-btn { position:fixed; top:20px; right:20px; padding:10px 15px; background:rgba(0,0,0,0.7); color:#fff; border:none; border-radius:5px; font-size:1em; cursor:pointer; z-index:1002; display:none; }
+    #career-menu { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.85); padding:20px; border-radius:10px; display:none; z-index:1003; color:#fff; }
+    #career-menu h3 { margin-top:0; }
+    #career-menu button { display:block; width:200px; margin:10px auto; padding:10px; font-size:1em; border:none; border-radius:5px; cursor:pointer; }
   </style>
 </head>
 <body style="margin:0; overflow:hidden;">
+  <div class="scan-frame"></div>
+  <div id="status">444กำลังค้นหา Hiro Marker...</div>
+  <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
   <button id="career-btn">อาชีพที่น่าสนใจ</button>
+
   <div id="career-menu">
-    <h3 style="margin-top:0;">เลือกสายงาน</h3>
-    <button data-career="default">Default</button>
+    <h3>เลือกสายงาน</h3>
     <button data-career="network">Network Security</button>
     <button data-career="cloud">Cloud Engineer</button>
     <button data-career="ai">AI Engineer</button>
@@ -26,67 +37,171 @@
   </div>
 
   <audio id="voice" preload="auto"></audio>
+  <video id="side-video" preload="auto" loop muted playsinline crossorigin="anonymous" style="display:none;"></video>
 
-  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" renderer="logarithmicDepthBuffer: true;">
+  <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true" arjs="sourceType:webcam; debugUIEnabled:false;" style="visibility:hidden;">
     <a-assets>
-      <!-- โมเดลและมีเดีย -->
+      <!-- default assets -->
       <a-asset-item id="model-default" src="model.glb"></a-asset-item>
       <audio id="audio-default" src="voice.mp3"></audio>
       <video id="video-default" src="career-video.mp4"></video>
+      <!-- network security -->
       <a-asset-item id="model-network" src="network-model.glb"></a-asset-item>
       <audio id="audio-network" src="voice-network.mp3"></audio>
       <video id="video-network" src="video-network.mp4"></video>
+      <!-- cloud engineer -->
       <a-asset-item id="model-cloud" src="cloud-model.glb"></a-asset-item>
       <audio id="audio-cloud" src="voice-cloud.mp3"></audio>
       <video id="video-cloud" src="video-cloud.mp4"></video>
+      <!-- ai engineer -->
       <a-asset-item id="model-ai" src="ai-model.glb"></a-asset-item>
       <audio id="audio-ai" src="voice-ai.mp3"></audio>
       <video id="video-ai" src="video-ai.mp4"></video>
+      <!-- data center -->
       <a-asset-item id="model-dc" src="dc-model.glb"></a-asset-item>
       <audio id="audio-dc" src="voice-dc.mp3"></audio>
       <video id="video-dc" src="video-dc.mp4"></video>
     </a-assets>
 
-    <!-- กล้องและ container ตำแหน่งคงที่หน้าจอ -->
-    <a-entity camera>
+    <a-marker preset="hiro" id="hiro-marker"></a-marker>
+    <a-entity camera position="0 1.6 0">
       <a-entity id="fixed-container" visible="false">
-        <a-entity id="model-entity" gltf-model="#model-default" animation-mixer position="0 0 -2" scale="0.5 0.5 0.5"></a-entity>
-        <a-video id="video-entity" src="#video-default" position="0 -1 -2" width="1.5" height="0.84" autoplay loop></a-video>
+        <a-entity id="model-entity" gltf-model="#model-default" animation-mixer position="0 0 -2.5" scale="0.3 0.3 0.3"></a-entity>
+        <a-video id="video-entity" src="#video-default" position="0 -0.8 -2.5" width="1" height="0.5625" autoplay loop muted></a-video>
       </a-entity>
     </a-entity>
-
-    <a-entity light="type: ambient; intensity: 0.6"></a-entity>
-    <a-entity light="type: directional; intensity: 0.8" position="-1 1 0"></a-entity>
+    <a-entity light="type:ambient; intensity:0.6"></a-entity>
+    <a-entity light="type:directional; intensity:0.8" position="-1 1 0"></a-entity>
   </a-scene>
 
   <script>
     window.onload = () => {
+      const unlockBtn = document.getElementById('unlock');
+      const scanFrame = document.querySelector('.scan-frame');
+      const status = document.getElementById('status');
+      const arScene = document.getElementById('ar-scene');
+      const marker = document.getElementById('hiro-marker');
+      const fixed = document.getElementById('fixed-container');
       const careerBtn = document.getElementById('career-btn');
       const menu = document.getElementById('career-menu');
       const closeBtn = document.getElementById('close-menu');
-      const fixed = document.getElementById('fixed-container');
       const modelEnt = document.getElementById('model-entity');
-      const videoEnt = document.getElementById('video-entity');
       const voice = document.getElementById('voice');
+      const sideVideo = document.getElementById('side-video');
 
-      careerBtn.onclick = () => menu.style.display = 'block';
-      closeBtn.onclick = () => menu.style.display = 'none';
+      // เปิด AR
+      const startAR = () => {
+        unlockBtn.style.display = 'none';
+        scanFrame.style.display = 'block';
+        status.style.display = 'block';
+        arScene.style.visibility = 'visible';
+        careerBtn.style.display = 'block';
+        document.body.removeEventListener('click', startAR);
+      };
+      document.body.addEventListener('click', startAR);
 
-      menu.querySelectorAll('[data-career]').forEach(btn => btn.onclick = () => {
-        const key = btn.getAttribute('data-career');
-        // เปลี่ยนโมเดล
-        modelEnt.setAttribute('gltf-model', `#model-${key}`);
-        // เปลี่ยนเสียง
-        voice.src = document.getElementById(`audio-${key}`).getAttribute('src');
-        voice.currentTime = 0; voice.play().catch(() => {});
-        // เปลี่ยนวิดีโอ
-        videoEnt.setAttribute('src', `#video-${key}`);
-        videoEnt.components.material.material.map.needsUpdate = true;
-        const vid = document.getElementById(`video-${key}`);
-        vid.currentTime = 0; vid.play().catch(() => {});
-        // แสดงใน AR
-        fixed.setAttribute('visible', true);
+      // เมื่อเจอ marker
+      marker.addEventListener('markerFound', () => {
+        status.textContent = 'พบ Hiro Marker!';
+        status.style.background = 'rgba(0,255,0,0.7)';
+        scanFrame.style.display = 'none';
+        fixed.setAttribute('visible', 'true');
+        // default media
+        setMedia('default');
+      });
+
+      // เมื่อ marker หายไป
+      marker.addEventListener('markerLost', () => {
+        status.textContent = 'กำลังค้นหา Hiro Marker...';
+        status.style.background = 'rgba(0,0,0,0.7)';
+        scanFrame.style.display = 'block';
+        fixed.setAttribute('visible', 'false');
+        voice.pause();
+        sideVideo.pause();
+      });
+
+      function setMedia(key) {
+        console.log(`กำลังโหลด ${key} media...`);
+        
+        // อัพเดตโมเดล
+        const modelAsset = document.getElementById(`model-${key}`);
+        if (modelAsset) {
+          modelEnt.setAttribute('gltf-model', `#model-${key}`);
+          console.log(`โหลดโมเดล: #model-${key}`);
+        }
+        
+        // อัพเดตเสียง
+        const audioAsset = document.getElementById(`audio-${key}`);
+        if (audioAsset) {
+          voice.src = audioAsset.getAttribute('src');
+          voice.currentTime = 0;
+          // เล่นเสียงหลังจากรอสักครู่
+          setTimeout(() => {
+            voice.play().catch(e => console.warn('ไม่สามารถเล่นเสียงได้:', e));
+          }, 500);
+          console.log(`โหลดเสียง: ${voice.src}`);
+        }
+        
+        // อัพเดตวิดีโอ
+        const videoAsset = document.getElementById(`video-${key}`);
+        if (videoAsset) {
+          const videoElement = document.querySelector('#video-entity');
+          videoElement.setAttribute('src', `#video-${key}`);
+          sideVideo.src = videoAsset.getAttribute('src');
+          sideVideo.currentTime = 0;
+          sideVideo.play().catch(e => console.warn('ไม่สามารถเล่นวิดีโอได้:', e));
+          console.log(`โหลดวิดีโอ: ${sideVideo.src}`);
+        }
+        
+        // แสดงข้อความสถานะ
+        status.textContent = `แสดง: ${getCareerName(key)}`;
+        status.style.background = 'rgba(0,150,255,0.7)';
+      }
+
+      function getCareerName(key) {
+        const names = {
+          'default': 'โมเดลพื้นฐาน',
+          'network': 'Network Security',
+          'cloud': 'Cloud Engineer', 
+          'ai': 'AI Engineer',
+          'dc': 'Data Center'
+        };
+        return names[key] || key;
+      }
+
+      // career button
+      careerBtn.addEventListener('click', () => {
+        menu.style.display = 'block';
+      });
+      
+      closeBtn.addEventListener('click', () => {
         menu.style.display = 'none';
+      });
+      
+      menu.querySelectorAll('button[data-career]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-career');
+          console.log(`เลือกอาชีพ: ${key}`);
+          setMedia(key);
+          menu.style.display = 'none';
+        });
+      });
+
+      // เพิ่มการตรวจสอบการโหลดทรัพยากร
+      modelEnt.addEventListener('model-loaded', () => {
+        console.log('โมเดลโหลดสำเร็จ');
+      });
+
+      modelEnt.addEventListener('model-error', (error) => {
+        console.error('เกิดข้อผิดพลาดในการโหลดโมเดล:', error);
+      });
+
+      voice.addEventListener('loadeddata', () => {
+        console.log('เสียงโหลดสำเร็จ');
+      });
+
+      sideVideo.addEventListener('loadeddata', () => {
+        console.log('วิดีโอโหลดสำเร็จ');
       });
     };
   </script>
