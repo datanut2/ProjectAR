@@ -83,27 +83,27 @@
       smooth="true"
       smoothCount="5">
       
-      <!-- โมเดล 3D -->
-      <a-entity
-        id="model-entity"
-        gltf-model="model.glb"
-        position="0 0 0"
-        rotation="-90 0 0"
-        scale="0.5 0.5 0.5"
-        animation-mixer>
-      </a-entity>
-
-      <!-- เพิ่มวิดีโอข้างโมเดล -->
+      <!-- วิดีโอแนวตั้ง อยู่ด้านหลังโมเดล (z = -0.5)-->
       <a-video 
         src="#side-video"
-        position="1.2 0 0"      <!-- ขยับไปข้างขวา 1.2 หน่วย -->
-        rotation="-90 0 0"      <!-- วางแนวราบกับพื้น marker -->
-        width="1.6" 
-        height="0.9" 
+        position="0 0 -0.5"
+        rotation="-90 0 0"
+        width="1"
+        height="1.78"
         autoplay="true"
         loop="true"
         muted="true">
       </a-video>
+
+      <!-- โมเดล 3D ขยับมาเล็กน้อยให้มาด้านหน้า (z = 0.1) -->
+      <a-entity
+        id="model-entity"
+        gltf-model="model.glb"
+        position="0 0 0.1"
+        rotation="-90 0 0"
+        scale="0.5 0.5 0.5"
+        animation-mixer>
+      </a-entity>
 
     </a-marker>
 
@@ -152,7 +152,6 @@
         console.log('Hiro Marker หายไป');
         status.textContent = 'กำลังค้นหา Hiro Marker...';
         status.style.background = 'rgba(0, 0, 0, 0.7)';
-        // ไม่หยุดเสียงหรือวิดีโอ
       });
 
       // ตรวจสอบการโหลดโมเดล
