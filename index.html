@@ -8,59 +8,69 @@
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <!-- A-Frame Extras (animation-mixer) -->
   <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-  <!-- AR.js for marker detection -->
+  <!-- AR.js -->
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
   <style>
-    /* copy your existing styles */
+    .scan-frame { position: fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:280px; height:280px; border:3px solid rgba(255,255,255,0.8); border-radius:20px; box-shadow:0 0 0 4000px rgba(0,0,0,0.4); display:none; z-index:1000; pointer-events:none; }
+    #status { position: fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:#fff; padding:10px 20px; border-radius:20px; display:none; z-index:1000; }
+    #unlock { position: fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 30px; border-radius:10px; font-size:1.2em; z-index:1001; }
+    #career-btn { position: fixed; top:20px; right:20px; padding:10px 15px; background:rgba(0,0,0,0.7); color:#fff; border:none; border-radius:5px; font-size:1em; cursor:pointer; z-index:1002; display:none; }
+    #career-menu { position: fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,0,0,0.85); padding:20px; border-radius:10px; display:none; z-index:1003; color:#fff; }
+    #career-menu h3 { margin-top:0; }
+    #career-menu button { display:block; width:200px; margin:10px auto; padding:10px; font-size:1em; border:none; border-radius:5px; cursor:pointer; }
   </style>
 </head>
 <body style="margin:0; overflow:hidden;">
-  <!-- your existing UI: scan-frame, unlock, status, career-btn, career-menu -->
+  <div class="scan-frame"></div>
+  <div id="status">กำลังค้นหา Hiro Marker...</div>
+  <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
+  <button id="career-btn">อาชีพที่น่าสนใจ</button>
+  <div id="career-menu">
+    <h3>เลือกสายงาน</h3>
+    <button data-career="Network Engineer">Network Engineer</button>
+    <button data-career="Cloud Engineer">Cloud Engineer</button>
+    <button data-career="AI Engineer">AI Engineer</button>
+    <button data-career="Data Center">Data Center</button>
+    <button id="close-menu">ปิด</button>
+  </div>
 
-  <!-- ใช้ default audio/video -->
-  <audio id="voice" src="voice.mp3" preload="auto"></audio>
-  <video id="side-video" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous" style="display:none;"></video>
+  <!-- default media -->
+  <audio id="default-audio" src="voice.mp3" preload="auto"></audio>
+  <video id="default-video" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous" style="display:none;"></video>
 
-  <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true"
-           arjs="sourceType:webcam; debugUIEnabled:false;" style="visibility:hidden;">
+  <a-scene embedded arjs="sourceType:webcam; debugUIEnabled:false;" renderer="logarithmicDepthBuffer:true" vr-mode-ui="enabled:false" style="visibility:hidden;">
     <a-assets>
-      <!-- default assets -->
+      <!-- marker default -->
       <a-asset-item id="model-default" src="model.glb"></a-asset-item>
-      <audio id="audio-default" src="voice.mp3"></audio>
-      <video id="video-default" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
-      <!-- career-button assets unchanged -->
+      <audio id="audio-default-asset" src="voice.mp3"></audio>
+      <video id="video-default-asset" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
+      <!-- career assets -->
       <a-asset-item id="model-network" src="network-model.glb"></a-asset-item>
       <audio id="audio-network" src="voice-network.mp3"></audio>
       <video id="video-network" src="video-network.mp4"></video>
-      <!-- etc. -->
+      <a-asset-item id="model-cloud" src="cloud-model.glb"></a-asset-item>
+      <audio id="audio-cloud" src="voice-cloud.mp3"></audio>
+      <video id="video-cloud" src="video-cloud.mp4"></video>
+      <a-asset-item id="model-ai" src="ai-model.glb"></a-asset-item>
+      <audio id="audio-ai" src="voice-ai.mp3"></audio>
+      <video id="video-ai" src="video-ai.mp4"></video>
+      <a-asset-item id="model-dc" src="dc-model.glb"></a-asset-item>
+      <audio id="audio-dc" src="voice-dc.mp3"></audio>
+      <video id="video-dc" src="video-dc.mp4"></video>
     </a-assets>
 
-    <!-- Marker container ใช้ default assets -->
     <a-marker preset="hiro" id="hiro-marker">
-      <a-entity id="marker-container" visible="true">
-        <a-entity id="model-entity"
-                  gltf-model="#model-default"
-                  animation-mixer
-                  position="-0.3 0.08 0.1"
-                  scale="0.3 0.3 0.3"
-                  rotation="0 45 0">
-        </a-entity>
-        <a-video id="video-entity"
-                 src="#video-default"
-                 position="0.4 0.5 -0.1"
-                 width="1.5"
-                 height="0.84"
-                 autoplay
-                 loop
-                 muted>
-        </a-video>
+      <a-entity id="marker-container">
+        <a-entity id="model-entity" gltf-model="#model-default" animation-mixer position="0 0 -2.5" scale="0.3 0.3 0.3"></a-entity>
+        <a-video id="video-entity" src="#video-default-asset" position="0 -0.8 -2.5" width="1" height="0.5625" autoplay loop muted></a-video>
       </a-entity>
     </a-marker>
 
-    <!-- Career container and rest of your scene unchanged -->
     <a-entity camera position="0 1.6 0">
       <a-entity id="career-container" position="0 -0.5 -3" visible="false">
-        <!-- unchanged -->
+        <a-video id="career-video" position="0.4 0.5 -0.1" width="1.5" height="0.84"></a-video>
+        <a-entity id="career-model" position="-0.3 0.08 0.1" scale="0.2 0.2 0.2"></a-entity>
+        <a-text id="career-status" position="0 -1.2 0" value="Career Content Loading..." align="center" color="white" width="4"></a-text>
       </a-entity>
     </a-entity>
     <a-entity light="type:ambient; intensity:0.6"></a-entity>
@@ -69,51 +79,55 @@
 
   <script>
     window.onload = () => {
-      const unlockBtn = document.getElementById('unlock');
+      const unlock = document.getElementById('unlock');
       const scanFrame = document.querySelector('.scan-frame');
-      const status    = document.getElementById('status');
-      const arScene   = document.getElementById('ar-scene');
-      const marker    = document.getElementById('hiro-marker');
-      const voice     = document.getElementById('voice');
-      const videoDef  = document.getElementById('video-default');
+      const status = document.getElementById('status');
+      const scene = document.querySelector('a-scene');
+      const marker = document.getElementById('hiro-marker');
+      const defaultVideo = document.getElementById('video-default-asset');
+      const defaultAudio = document.getElementById('audio-default-asset');
+      const careerBtn = document.getElementById('career-btn');
+      const menu = document.getElementById('career-menu');
+      const closeMenu = document.getElementById('close-menu');
 
-      // unlock media and show AR
       const startAR = () => {
-        voice.play().then(() => voice.pause());
-        document.body.removeEventListener('click', startAR);
-        unlockBtn.style.display = 'none';
+        defaultAudio.play().then(() => defaultAudio.pause());
+        defaultVideo.play().then(() => defaultVideo.pause());
+        unlock.style.display = 'none';
         scanFrame.style.display = 'block';
         status.style.display = 'block';
-        arScene.style.visibility = 'visible';
-        document.getElementById('career-btn').style.display = 'block';
+        scene.style.visibility = 'visible';
+        careerBtn.style.display = 'block';
+        document.body.removeEventListener('click', startAR);
       };
       document.body.addEventListener('click', startAR);
 
-      // play default media on marker
-      let played = false;
       marker.addEventListener('markerFound', () => {
-        if (!played) {
-          status.textContent = 'พบ Hiro Marker!';
-          status.style.background = 'rgba(0,255,0,0.7)';
-          scanFrame.style.display = 'none';
-          videoDef.currentTime = 0;
-          videoDef.play().catch(()=>{});
-          setTimeout(() => {
-            voice.currentTime = 0;
-            voice.play().catch(()=>{});
-          }, 1000);
-          played = true;
-        }
+        status.textContent = 'พบ Hiro Marker!';
+        status.style.background = 'rgba(0,255,0,0.7)';
+        scanFrame.style.display = 'none';
+        defaultVideo.currentTime = 0;
+        defaultVideo.play().catch(() => {});
+        setTimeout(() => {
+          defaultAudio.currentTime = 0;
+          defaultAudio.play().catch(() => {});
+        }, 1000);
       });
 
-      // sticky display on markerLost
       marker.addEventListener('markerLost', () => {
-        status.textContent = 'โมเดลยังคงแสดงอยู่ (ไม่ต้องสแกน marker)';
+        status.textContent = 'โมเดลยังคงแสดงอยู่';
         status.style.background = 'rgba(0,150,255,0.7)';
         scanFrame.style.display = 'none';
       });
 
-      // career-button handlers remain exactly as before (changeCareer, etc.)
+      careerBtn.addEventListener('click', () => menu.style.display = 'block');
+      closeMenu.addEventListener('click', () => menu.style.display = 'none');
+      menu.querySelectorAll('button[data-career]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          changeCareer(btn.getAttribute('data-career'));
+          menu.style.display = 'none';
+        });
+      });
     };
   </script>
 </body>
