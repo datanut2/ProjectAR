@@ -41,9 +41,10 @@
   <a-scene embedded arjs="sourceType:webcam; debugUIEnabled:false;" renderer="logarithmicDepthBuffer:true" vr-mode-ui="enabled:false" style="visibility:hidden;">
     <a-assets>
       <!-- marker default -->
-      <a-asset-item id="model-default" src="model.glb"></a-asset-item>
-      <audio id="audio-default-asset" src="voice.mp3"></audio>
-      <video id="video-default-asset" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
+      <!-- Default marker media -->
+<a-asset-item id="model-default" src="model.glb"></a-asset-item>
+<audio id="audio-default" src="voice.mp3"></audio>
+<video id="video-default" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
       <!-- career assets -->
       <a-asset-item id="model-network" src="network-model.glb"></a-asset-item>
       <audio id="audio-network" src="voice-network.mp3"></audio>
@@ -60,11 +61,19 @@
     </a-assets>
 
     <a-marker preset="hiro" id="hiro-marker">
-      <a-entity id="marker-container">
-        <a-entity id="model-entity" gltf-model="#model-default" animation-mixer position="0 0 -2.5" scale="0.3 0.3 0.3"></a-entity>
-        <a-video id="video-entity" src="#video-default-asset" position="0 -0.8 -2.5" width="1" height="0.5625" autoplay loop muted></a-video>
-      </a-entity>
-    </a-marker>
+  <a-entity id="marker-container">
+    <a-entity id="model-entity"
+              gltf-model="#model-default"
+              animation-mixer
+              position="0 0 -2.5"
+              scale="0.3 0.3 0.3"></a-entity>
+    <a-video id="video-entity"
+             src="#video-default"
+             position="0 -0.8 -2.5"
+             width="1" height="0.5625"
+             autoplay loop muted></a-video>
+  </a-entity>
+</a-marker>
 
     <a-entity camera position="0 1.6 0">
       <a-entity id="career-container" position="0 -0.5 -3" visible="false">
@@ -103,16 +112,21 @@
       document.body.addEventListener('click', startAR);
 
       marker.addEventListener('markerFound', () => {
-        status.textContent = 'พบ Hiro Marker!';
-        status.style.background = 'rgba(0,255,0,0.7)';
-        scanFrame.style.display = 'none';
-        defaultVideo.currentTime = 0;
-        defaultVideo.play().catch(() => {});
-        setTimeout(() => {
-          defaultAudio.currentTime = 0;
-          defaultAudio.play().catch(() => {});
-        }, 1000);
-      });
+  status.textContent = 'พบ Hiro Marker!';
+  status.style.background = 'rgba(0,255,0,0.7)';
+  scanFrame.style.display = 'none';
+
+  // เล่น default video + ดีเลย์ 1 วิ แล้วเล่น default audio
+  const vid = document.getElementById('video-default');
+  const aud = document.getElementById('audio-default');
+  vid.currentTime = 0;
+  vid.play().catch(()=>{});
+  setTimeout(() => {
+    aud.currentTime = 0;
+    aud.play().catch(()=>{});
+  }, 1000);
+});
+
 
       marker.addEventListener('markerLost', () => {
         status.textContent = 'โมเดลยังคงแสดงอยู่';
