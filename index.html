@@ -43,21 +43,17 @@
   </div>
 
   <audio id="voice" src="voice.mp3" preload="metadata"></audio>
-  <video id="side-video" src="career-video.mp4" preload="metadata" loop muted playsinline crossorigin="anonymous" style="display:none;"></video>
 
   <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true; colorManagement:false; antialias:false; precision:mediump;" arjs="sourceType:webcam; debugUIEnabled:false; detectionMode:mono_and_matrix; matrixCodeType:3x3; maxDetectionRate:30;" style="visibility:hidden;">
     <a-assets timeout="10000">
       <a-asset-item id="animated-model" src="model.glb"></a-asset-item>
-      <video id="side-video-element" src="career-video.mp4" preload="metadata" loop muted playsinline crossorigin="anonymous"></video>
     </a-assets>
     
     <!-- Marker container (แสดงเมื่อสแกน Hiro marker) -->
     <a-marker preset="hiro" id="hiro-marker">
       <a-entity id="marker-container" visible="true">
-        <!-- โมเดลจาก marker (ด้านหน้า - ตำแหน่งเดียวกับอาชีพอื่น) -->
-        <a-entity id="model-entity" gltf-model="#animated-model" animation-mixer="clip:*; loop:repeat; timeScale:1" position="-0.3 0.08 0.1" scale="0.3 0.3 0.3" rotation="0 45 0" shadow="cast:false; receive:false"></a-entity>
-        <!-- วิดีโอจาก marker (ด้านหลัง - ตำแหน่งเดียวกับอาชีพอื่น) -->
-        <a-video id="video-entity" src="#side-video-element" position="0.4 0.5 -0.1" width="1.5" height="0.84" rotation="0 0 0" autoplay loop muted shadow="cast:false; receive:false"></a-video>
+        <!-- โมเดลจาก marker - แสดงตรงกลางจอ -->
+        <a-entity id="model-entity" gltf-model="#animated-model" animation-mixer="clip:*; loop:repeat; timeScale:1" position="0 0 -2.5" scale="0.3 0.3 0.3" rotation="0 0 0" shadow="cast:false; receive:false"></a-entity>
       </a-entity>
     </a-marker>
     
@@ -89,7 +85,6 @@
       const careerVideo = document.getElementById('career-video');
       const careerStatus = document.getElementById('career-status');
       const voice = document.getElementById('voice');
-      const sideVideo = document.getElementById('side-video');
       const careerBtn = document.getElementById('career-btn');
       const menu = document.getElementById('career-menu');
       const closeBtn = document.getElementById('close-menu');
@@ -186,20 +181,10 @@
         voice.pause();
         voice.currentTime = 0;
         
-        // หยุดวิดีโอหลัก
-        sideVideo.pause();
-        sideVideo.currentTime = 0;
-        
         // หยุดวิดีโอจาก career
         const careerVideoEl = document.querySelector('#career-video');
         if (careerVideoEl && careerVideoEl.components && careerVideoEl.components.material && careerVideoEl.components.material.material.map) {
           careerVideoEl.components.material.material.map.image.pause();
-        }
-        
-        // หยุดวิดีโอจาก marker
-        const markerVideoEl = document.querySelector('#video-entity');
-        if (markerVideoEl && markerVideoEl.components && markerVideoEl.components.material && markerVideoEl.components.material.material.map) {
-          markerVideoEl.components.material.material.map.image.pause();
         }
         
         console.log('หยุดสื่อทั้งหมดแล้ว');
@@ -308,7 +293,7 @@
               break;
             default:
               modelSrc = 'model.glb';
-              videoSrc = 'career-video.mp4';
+              videoSrc = 'video-network.mp4'; // ใช้วิดีโออื่นแทน
               audioSrc = 'voice.mp3';
           }
           
@@ -495,8 +480,13 @@
 
       // เปิด AR หลังคลิก
       const startAR = () => {
-        voice.play().then(() => voice.pause()); 
-        sideVideo.play().then(() => sideVideo.pause());
+        // ปลดล็อคเสียงเพื่อให้สามารถเล่นได้ภายหลัง
+        voice.play().then(() => {
+          voice.pause();
+          voice.currentTime = 0;
+          console.log('🔓 ปลดล็อคเสียงสำเร็จ - พร้อมใช้งาน voice.mp3');
+        }).catch(e => console.warn('ไม่สามารถปลดล็อคเสียงได้:', e));
+        
         unlockBtn.style.display = 'none'; 
         scanFrame.style.display = 'block'; 
         status.style.display = 'block'; 
@@ -517,14 +507,12 @@
         careerContainer.setAttribute('visible', 'false');
         markerContainer.setAttribute('visible', 'true');
         
-        // เล่นสื่อจาก marker
-        const sideVideoElement = document.getElementById('side-video-element');
-        sideVideoElement.currentTime = 0; 
-        sideVideoElement.play().catch(e=>console.warn(e)); 
+        // เล่น voice.mp3 หลังหน่วงเวลา
         setTimeout(() => {
-          voice.currentTime=0; 
-          voice.play().catch(e=>console.warn(e)); 
-        },500); // ลดเวลาหน่วงเสียง
+          voice.currentTime = 0; 
+          voice.play().catch(e => console.warn('ไม่สามารถเล่นเสียงได้:', e)); 
+          console.log('🎵 เล่นเสียง voice.mp3 หลังสแกน marker');
+        }, 500);
       });
 
       // หาย marker - โมเดลยังคงแสดงอยู่ (sticky display)
