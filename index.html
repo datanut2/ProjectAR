@@ -16,7 +16,8 @@
   <style>
     .scan-frame { position: fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:280px; height:280px; border:3px solid rgba(255,255,255,0.8); border-radius:20px; box-shadow:0 0 0 4000px rgba(0,0,0,0.4); display:none; z-index:1000; pointer-events:none; }
     #status { position: fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:#fff; padding:10px 20px; border-radius:20px; display:none; z-index:1000; }
-    #unlock { position: fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 30px; border-radius:10px; font-size:1.2em; z-index:1001; }
+    /* ปุ่ม unlock ปรับให้เห็นชัดขึ้น */
+    #unlock { position: fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,123,255,0.9); color:#fff; padding:15px 30px; border-radius:10px; font-size:1.2em; z-index:1001; border:2px solid #fff; cursor:pointer; }
     /* ปุ่มอาชีพ */
     #career-btn { position: fixed; top:20px; right:20px; padding:10px 15px; background:rgba(0,0,0,0.7); color:#fff; border:none; border-radius:5px; font-size:1em; cursor:pointer; z-index:1002; display:none; }
     /* เมนูเลือกอาชีพ */
@@ -27,8 +28,8 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">2กำลังค้นหา Hiro Marker...</div>
-  <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
+  <div id="status">กำลังค้นหา Hiro Marker...</div>
+  <div id="unlock">แตะหน้าจอเพื่อเปิดกล้อง AR</div>
   <!-- ปุ่มอาชีพ -->
   <button id="career-btn">อาชีพที่น่าสนใจ</button>
 
@@ -44,8 +45,8 @@
 
   <audio id="voice" src="voice.mp3" preload="metadata"></audio>
 
-  <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true; colorManagement:false; antialias:false; precision:mediump;" arjs="sourceType:webcam; debugUIEnabled:false; detectionMode:mono_and_matrix; matrixCodeType:3x3; maxDetectionRate:30;" style="visibility:hidden;">
-    <a-assets timeout="10000">
+  <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true; colorManagement:false; antialias:false; precision:mediump;" arjs="sourceType:webcam; debugUIEnabled:false; detectionMode:mono_and_matrix; matrixCodeType:3x3; maxDetectionRate:30; cameraParametersUrl:data/camera_para.dat;" style="visibility:hidden;">
+    <a-assets timeout="5000">
       <a-asset-item id="animated-model" src="model.glb"></a-asset-item>
     </a-assets>
     
@@ -542,20 +543,39 @@
         }, 200); // ลดเวลารอให้รู้สึกตอบสนองเร็วขึ้น
       }
 
-      // เปิด AR หลังคลิก
+      // เปิด AR หลังคลิก - ไม่เล่นเสียงก่อน
       const startAR = () => {
-        // ปลดล็อคเสียงเพื่อให้สามารถเล่นได้ภายหลัง
-        voice.play().then(() => {
-          voice.pause();
-          voice.currentTime = 0;
-          console.log('🔓 ปลดล็อคเสียงสำเร็จ - พร้อมใช้งาน voice.mp3');
-        }).catch(e => console.warn('ไม่สามารถปลดล็อคเสียงได้:', e));
+        console.log('🚀 เริ่มระบบ AR...');
         
+        // ซ่อนปุ่มปลดล็อค
         unlockBtn.style.display = 'none'; 
-        scanFrame.style.display = 'block'; 
-        status.style.display = 'block'; 
+        
+        // แสดง loading ขณะรอกล้อง
+        status.textContent = 'กำลังเข้าถึงกล้อง...';
+        status.style.background = 'rgba(255,165,0,0.7)';
+        status.style.display = 'block';
+        
+        // เริ่ม AR scene
         arScene.style.visibility = 'visible';
-        careerBtn.style.display = 'block';
+        
+        // รอให้ AR.js เริ่มทำงานแล้วค่อยแสดง UI
+        setTimeout(() => {
+          scanFrame.style.display = 'block';
+          careerBtn.style.display = 'block';
+          status.textContent = 'กำลังค้นหา Hiro Marker...';
+          status.style.background = 'rgba(0,0,0,0.7)';
+          
+          // ปลดล็อคเสียงเงียบๆ เตรียมไว้ใช้ภายหลัง
+          voice.volume = 0;
+          voice.play().then(() => {
+            voice.pause();
+            voice.currentTime = 0;
+            voice.volume = 1; // คืนระดับเสียงปกติ
+            console.log('🔓 ปลดล็อคเสียงเงียบๆ สำเร็จ');
+          }).catch(e => console.warn('ไม่สามารถปลดล็อคเสียงได้:', e));
+          
+        }, 2000); // รอให้ AR.js โหลดเสร็จ
+        
         document.body.removeEventListener('click', startAR);
       };
       document.body.addEventListener('click', startAR);
