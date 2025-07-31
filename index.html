@@ -50,13 +50,29 @@
     
     <!-- Marker container (แสดงเมื่อสแกน Hiro marker) -->
     <a-marker preset="hiro" id="hiro-marker">
-      <a-entity id="marker-container" visible="true">
-        <!-- โมเดลจาก marker (ด้านหน้า - ตำแหน่งเดียวกับอาชีพอื่น) -->
-        <a-entity id="model-entity" gltf-model="#animated-model" animation-mixer position="-0.3 0.08 0.1" scale="0.3 0.3 0.3" rotation="0 45 0"></a-entity>
-        <!-- วิดีโอจาก marker (ด้านหลัง - ตำแหน่งเดียวกับอาชีพอื่น) -->
-        <a-video id="video-entity" src="#side-video-element" position="0.4 0.5 -0.1" width="1.5" height="0.84" rotation="0 0 0" autoplay loop muted></a-video>
-      </a-entity>
+      <!-- ไม่มี entity ใน marker แล้ว เพราะใช้ fixed container แทน -->
     </a-marker>
+    
+    <!-- Fixed container สำหรับโมเดลหลัก (แสดงกึ่งกลางจอ) -->
+    <a-entity camera position="0 0 0">
+      <a-entity id="fixed-container" visible="false">
+        <!-- โมเดลหลัก - แสดงกึ่งกลางจอ -->
+        <a-entity id="model-entity"
+                  gltf-model="#animated-model"
+                  position="0 0 -2.5"
+                  rotation="0 0 0"
+                  scale="0.3 0.3 0.3"
+                  animation-mixer>
+        </a-entity>
+        <!-- วิดีโอหลัก - แสดงกึ่งกลางจอ -->
+        <a-video id="video-entity"
+                 src="#side-video-element"
+                 position="0 -0.8 -2.5"
+                 width="1" height="0.5625"
+                 autoplay loop muted>
+        </a-video>
+      </a-entity>
+    </a-entity>
     
     <!-- Career container (แสดงเมื่อเลือกอาชีพ) - อยู่หน้ากล้องโดยตรง -->
     <a-entity camera position="0 1.6 0">
@@ -80,7 +96,7 @@
       const status = document.getElementById('status');
       const arScene = document.getElementById('ar-scene');
       const marker = document.getElementById('hiro-marker');
-      const markerContainer = document.getElementById('marker-container');
+      const fixedContainer = document.getElementById('fixed-container');
       const careerContainer = document.getElementById('career-container');
       const careerModel = document.getElementById('career-model');
       const careerVideo = document.getElementById('career-video');
@@ -203,15 +219,19 @@
         console.log('หยุดสื่อทั้งหมดแล้ว');
       }
 
-      // ฟังก์ชันล้างโมเดลและสื่อเก่า
+      // ฟังก์ชันล้างโมเดลและสื่อเก่า (ไม่กระทบ fixed container)
       function clearOldAssets() {
         console.log('กำลังล้างโมเดลและสื่อเก่า...');
         
-        // หยุดสื่อทั้งหมดก่อน
-        stopAllMedia();
+        // หยุดสื่อ career เท่านั้น ไม่กระทบสื่อหลัก
+        // หยุดวิดีโอจาก career
+        const careerVideoEl = document.querySelector('#career-video');
+        if (careerVideoEl && careerVideoEl.components && careerVideoEl.components.material && careerVideoEl.components.material.material.map) {
+          careerVideoEl.components.material.material.map.image.pause();
+        }
         
-        // ซ่อน marker container
-        markerContainer.setAttribute('visible', 'false');
+        // ซ่อน fixed container (ไม่ลบ แค่ซ่อน)
+        fixedContainer.setAttribute('visible', 'false');
         
         // ลบ attributes จาก career entities
         careerModel.removeAttribute('gltf-model');
@@ -485,52 +505,51 @@
         }, 300); // รอให้การล้างเสร็จสิ้น
       }
 
-      // เปิด AR หลังคลิก
+      // เปิด AR หลังคลิก (ปลดล็อคเสียง & วิดีโอ)
       const startAR = () => {
-        voice.play().then(() => voice.pause()); 
+        voice.play().then(() => voice.pause());
         sideVideo.play().then(() => sideVideo.pause());
-        unlockBtn.style.display = 'none'; 
-        scanFrame.style.display = 'block'; 
-        status.style.display = 'block'; 
+        unlockBtn.style.display = 'none';
+        scanFrame.style.display = 'block';
+        status.style.display = 'block';
         arScene.style.visibility = 'visible';
         careerBtn.style.display = 'block';
         document.body.removeEventListener('click', startAR);
       };
       document.body.addEventListener('click', startAR);
 
-      // พบ marker - แสดงโมเดลหลักและทำให้ sticky
+      // พบ marker - แสดงโมเดลหลักกึ่งกลางจอ (แบบโค้ดที่คุณส่งมา)
       marker.addEventListener('markerFound', () => {
         status.textContent = 'พบ Hiro Marker!';
         status.style.background = 'rgba(0,255,0,0.7)';
         scanFrame.style.display = 'none';
         markerFound = true;
         
-        // ซ่อน career container และแสดง marker container
+        // ซ่อน career container และแสดง fixed container
         careerContainer.setAttribute('visible', 'false');
-        markerContainer.setAttribute('visible', 'true');
+        fixedContainer.setAttribute('visible', 'true');
         
-        // เล่นสื่อจาก marker
-        const sideVideoElement = document.getElementById('side-video-element');
-        sideVideoElement.currentTime = 0; 
-        sideVideoElement.play().catch(e=>console.warn(e)); 
-        setTimeout(()=>{ 
-          voice.currentTime=0; 
-          voice.play().catch(e=>console.warn(e)); 
-        },1000);
+        // เล่นวิดีโอทันที
+        sideVideo.currentTime = 0;
+        sideVideo.play().catch(e => console.warn('Video play error:', e));
+        
+        // เล่นเสียงหลังหน่วงเวลา 1 วินาที
+        setTimeout(() => {
+          voice.currentTime = 0;
+          voice.play().catch(e => console.warn('Audio play error:', e));
+        }, 1000);
       });
 
-      // หาย marker - โมเดลยังคงแสดงอยู่ (sticky display)
+      // หาย marker - ไม่ซ่อนโมเดล/วิดีโอ (sticky display แบบโค้ดที่คุณส่งมา)
       marker.addEventListener('markerLost', () => {
         if (!markerFound) {
           status.textContent = 'กำลังค้นหา Hiro Marker...';
           status.style.background = 'rgba(0,0,0,0.7)';
           scanFrame.style.display = 'block';
         } else {
-          status.textContent = 'โมเดลยังคงแสดงอยู่ (ไม่ต้องสแกน marker)';
-          status.style.background = 'rgba(0,150,255,0.7)';
-          scanFrame.style.display = 'none';
-          // ให้ marker container ยังคงแสดงอยู่ - นี่คือ sticky display
-          markerContainer.setAttribute('visible', 'true');
+          status.textContent = 'กำลังค้นหา Hiro Marker...';
+          status.style.background = 'rgba(0,0,0,0.7)';
+          // fixedContainer, video, audio ค้างอยู่ ไม่ถูกซ่อน
         }
       });
 
