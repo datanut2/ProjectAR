@@ -46,7 +46,7 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">11กำลังค้นหา Hiro Marker...</div>
+  <div id="status">กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
 
   <audio id="voice" src="voice.mp3" preload="auto"></audio>
@@ -120,18 +120,18 @@
         sideVideo.currentTime = 0;
         sideVideo.play().catch(e => console.warn('Video play error:', e));
 
-        // เล่นเสียงหลัง delay 1 วินาที
+        // เล่นเสียงหลังหน่วงเวลา 1 วินาที
         setTimeout(() => {
           voice.currentTime = 0;
           voice.play().catch(e => console.warn('Audio play error:', e));
         }, 1000);
       });
 
-      // เมื่อ marker หาย (ออกนอกหน้ากล้อง)
+      // ไม่ต้องซ่อนโมเดล/วิดีโอ เมื่อ marker หาย
       marker.addEventListener('markerLost', () => {
         status.textContent      = 'กำลังค้นหา Hiro Marker...';
         status.style.background = 'rgba(0,0,0,0.7)';
-        fixedCont.setAttribute('visible', 'false');
+        // fixedCont, video, audio ค้างอยู่ ไม่ถูกซ่อน
       });
     };
   </script>
