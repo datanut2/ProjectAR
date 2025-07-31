@@ -27,7 +27,7 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">กำลังค้นหา Hiro Marker...</div>
+  <div id="status">2กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
   <!-- ปุ่มอาชีพ -->
   <button id="career-btn">อาชีพที่น่าสนใจ</button>
@@ -190,6 +190,54 @@
         console.log('หยุดสื่อทั้งหมดแล้ว');
       }
 
+      // ฟังก์ชันล้างแคชชั่วคราวหลังเลือกอาชีพ
+      function clearTemporaryCache() {
+        console.log('🧹 ล้างแคชชั่วคราว...');
+        
+        // ล้าง A-Frame cache ที่ไม่จำเป็น
+        if (AFRAME.utils && AFRAME.utils.srcLoader && AFRAME.utils.srcLoader.cache) {
+          const cacheKeys = Object.keys(AFRAME.utils.srcLoader.cache);
+          let deletedCount = 0;
+          
+          cacheKeys.forEach(key => {
+            // เก็บเฉพาะ cache ของโมเดลหลักและ career ปัจจุบัน
+            if (!key.includes('model.glb') && !key.includes('career-model-asset') && !key.includes('career-video-asset')) {
+              delete AFRAME.utils.srcLoader.cache[key];
+              deletedCount++;
+            }
+          });
+          
+          console.log(`ลบแคช ${deletedCount} รายการ`);
+        }
+        
+        // ล้าง texture cache ที่ไม่จำเป็น
+        if (AFRAME.utils.material && AFRAME.utils.material.textureCache) {
+          const textureKeys = Object.keys(AFRAME.utils.material.textureCache);
+          let deletedTextures = 0;
+          
+          textureKeys.forEach(key => {
+            if (!key.includes('model.glb') && !key.includes('career-model-asset') && !key.includes('career-video-asset')) {
+              delete AFRAME.utils.material.textureCache[key];
+              deletedTextures++;
+            }
+          });
+          
+          console.log(`ลบ texture cache ${deletedTextures} รายการ`);
+        }
+        
+        // ล้าง DOM assets เก่าที่ไม่ใช้แล้ว
+        const assets = document.querySelector('a-assets');
+        const oldAssets = assets.querySelectorAll('[id*="_"]:not([id*="career-model-asset_"]):not([id*="career-video-asset_"])');
+        oldAssets.forEach(asset => {
+          if (asset.id !== 'animated-model') {
+            asset.remove();
+            console.log('ลบ DOM asset เก่า:', asset.id);
+          }
+        });
+        
+        console.log('✅ ล้างแคชชั่วคราวเสร็จแล้ว');
+      }
+
       // ฟังก์ชันล้างโมเดลและสื่อเก่า
       function clearOldAssets() {
         console.log('กำลังล้างโมเดลและสื่อเก่า...');
@@ -250,24 +298,29 @@
         console.log('ล้างโมเดลและสื่อเก่าเสร็จแล้ว');
       }
 
-      // ฟังก์ชันเปลี่ยนอาชีพ
+      // ฟังก์ชันเปลี่ยนอาชีพ - โหลดเมื่อผู้ใช้คลิกจริงๆ
       function changeCareer(careerName) {
-        console.log('เปลี่ยนเป็นอาชีพ:', careerName);
+        console.log('👤 ผู้ใช้เลือกอาชีพ:', careerName);
+        
+        // แสดงสถานะการเตรียมการ
+        status.textContent = `กำลังเตรียม ${careerName}...`;
+        status.style.background = 'rgba(255,165,0,0.7)';
+        status.style.display = 'block';
+        scanFrame.style.display = 'none';
         
         // ล้างโมเดลและสื่อเก่าออกก่อน
         clearOldAssets();
         
-        // รอให้การล้างเสร็จสิ้น
+        // รอให้การล้างเสร็จสิ้นแล้วเริ่มโหลดสื่อใหม่
         setTimeout(async () => {
-          console.log('เริ่มแสดงอาชีพใหม่...');
+          console.log('📥 เริ่มโหลดสื่อสำหรับอาชีพ:', careerName);
           
           // แสดง career container และซ่อน marker container
           careerContainer.setAttribute('visible', 'true');
           markerContainer.setAttribute('visible', 'false');
           careerStatus.setAttribute('value', `Loading ${careerName}...`);
-          console.log('แสดง career container แล้ว');
           
-          // กำหนดไฟล์ตามอาชีพ
+          // กำหนดไฟล์ตามอาชีพ (โหลดเฉพาะเมื่อผู้ใช้เลือก)
           let modelSrc, videoSrc, audioSrc;
           
           switch(careerName) {
@@ -297,15 +350,18 @@
               audioSrc = 'voice.mp3';
           }
           
-          console.log('โหลดไฟล์ใหม่:', { modelSrc, videoSrc, audioSrc });
+          console.log('📁 ไฟล์ที่จะโหลด:', { modelSrc, videoSrc, audioSrc });
           
           try {
-            // โหลด assets ใหม่และรอให้เสร็จ
-            console.log('กำลังโหลด assets...');
+            // โหลด assets ใหม่เฉพาะเมื่อผู้ใช้เลือกจริง
+            console.log('⏳ กำลังโหลด assets สำหรับ', careerName, '...');
+            status.textContent = `กำลังโหลดข้อมูล ${careerName}...`;
+            
             const modelRef = await loadAssetDynamic('career-model-asset', modelSrc);
             const videoRef = await loadAssetDynamic('career-video-asset', videoSrc);
             
-            console.log('โหลด assets เสร็จ:', { modelRef, videoRef });
+            console.log('✅ โหลด assets เสร็จสำหรับ', careerName, ':', { modelRef, videoRef });
+            status.textContent = `กำลังตั้งค่า ${careerName}...`;
             
             // รอสักครู่ให้ A-Frame ประมวลผล
             setTimeout(async () => {
@@ -462,20 +518,28 @@
                 status.textContent = `แสดง: ${careerName} เสร็จแล้ว`;
                 status.style.background = 'rgba(0,255,0,0.7)';
                 careerStatus.setAttribute('value', `${careerName} Ready!`);
+                
+                // ล้างแคชชั่วคราวหลังตั้งค่าเสร็จ
+                setTimeout(() => {
+                  clearTemporaryCache();
+                }, 2000);
+                
               }, 1500); // ลดเวลารอเพื่อให้รู้สึกเร็วขึ้น
               
             }, 500);
             
-            // อัพเดตสถานะ
+            // อัพเดตสถานะการโหลด
             status.textContent = `กำลังโหลด: ${careerName}...`;
             status.style.background = 'rgba(255,255,0,0.7)';
             status.style.display = 'block';
             scanFrame.style.display = 'none';
             
           } catch (error) {
-            console.error('เกิดข้อผิดพลาดในการโหลด:', error);
+            console.error('❌ เกิดข้อผิดพลาดในการโหลดสื่อ:', error);
+            status.textContent = `ไม่สามารถโหลด ${careerName} ได้`;
+            status.style.background = 'rgba(255,0,0,0.7)';
           }
-        }, 300); // รอให้การล้างเสร็จสิ้น
+        }, 200); // ลดเวลารอให้รู้สึกตอบสนองเร็วขึ้น
       }
 
       // เปิด AR หลังคลิก
@@ -540,10 +604,13 @@
         menu.style.display = 'none';
       });
       
-      // ปุ่มสายงาน - เปลี่ยนโมเดล วิดีโอ และเสียงตามที่เลือก
+      // ปุ่มสายงาน - โหลดสื่อเฉพาะเมื่อผู้ใช้คลิกจริง
       menu.querySelectorAll('button[data-career]').forEach(btn => {
         btn.addEventListener('click', () => {
           const careerName = btn.getAttribute('data-career');
+          console.log('🖱️ ผู้ใช้คลิกเลือก:', careerName);
+          
+          // เรียกฟังก์ชันเปลี่ยนอาชีพ (จะโหลดสื่อเมื่อนี้เท่านั้น)
           changeCareer(careerName);
           menu.style.display = 'none';
         });
