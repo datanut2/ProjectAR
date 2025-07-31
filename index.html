@@ -27,7 +27,7 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">1กำลังค้นหา Hiro Marker...</div>
+  <div id="status">22กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
   <!-- ปุ่มอาชีพ -->
   <button id="career-btn">อาชีพที่น่าสนใจ</button>
@@ -42,7 +42,7 @@
     <button id="close-menu">ปิด</button>
   </div>
 
-  <audio id="voice" src="voice.mp3" preload="none"></audio>
+  <audio id="voice" src="voice.mp3" preload="metadata"></audio>
 
   <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true; colorManagement:false; antialias:false; precision:lowp;" arjs="sourceType:webcam; debugUIEnabled:false; detectionMode:mono; maxDetectionRate:30; cameraParametersUrl:''; trackingMethod:best;" style="visibility:hidden;">
     <a-assets timeout="2000">
@@ -52,8 +52,8 @@
     <!-- Marker container (แสดงเมื่อสแกน Hiro marker) -->
     <a-marker preset="hiro" id="hiro-marker">
       <a-entity id="marker-container" visible="true">
-        <!-- โมเดลจาก marker - ใหญ่ขึ้นและใช้ตำแหน่งเดียวกับอาชีพอื่น -->
-        <a-entity id="model-entity" gltf-model="#animated-model" animation-mixer="clip:*; loop:repeat; timeScale:1" position="-0.3 0.08 0.1" scale="0.5 0.5 0.5" rotation="0 45 0" shadow="cast:false; receive:false"></a-entity>
+        <!-- โมเดลหลักที่ตรงกลางจอ ขนาดใหญ่ขึ้น -->
+        <a-entity id="model-entity" gltf-model="#animated-model" animation-mixer="clip:*; loop:repeat; timeScale:1" position="0 0 -2.5" scale="0.8 0.8 0.8" rotation="0 0 0" shadow="cast:false; receive:false"></a-entity>
       </a-entity>
     </a-marker>
     
@@ -61,9 +61,9 @@
     <a-entity camera position="0 1.6 0">
       <a-entity id="career-container" position="0 -0.5 -3" visible="false">
         <!-- วิดีโอ - อยู่ด้านหลัง (ขยับขึ้นและไปขวา) -->
-        <a-video id="career-video" position="0.4 0.5 -0.1" width="1.5" height="0.84" rotation="0 0 0" shadow="cast:false; receive:false"></a-video>
+        <a-video id="career-video" position="0.4 0.5 -0.1" width="2.0" height="1.1" rotation="0 0 0" shadow="cast:false; receive:false"></a-video>
         <!-- โมเดล - อยู่ด้านหน้า (เท้าชิดขอบล่างวิดีโอ) -->
-        <a-entity id="career-model" position="-0.3 0.08 0.1" scale="0.2 0.2 0.2" rotation="0 45 0" shadow="cast:false; receive:false"></a-entity>
+        <a-entity id="career-model" position="-0.3 0.08 0.1" scale="0.4 0.4 0.4" rotation="0 45 0" shadow="cast:false; receive:false"></a-entity>
         <!-- ข้อความแสดงสถานะ -->
         <a-text id="career-status" position="0 -1.2 0" value="Career Content Loading..." align="center" color="white" width="4"></a-text>
       </a-entity>
@@ -133,7 +133,7 @@
           asset = document.createElement('video');
           asset.setAttribute('id', uniqueId);
           asset.setAttribute('src', `${src}?t=${timestamp}`);
-          asset.setAttribute('preload', 'metadata'); // เปลี่ยนเป็น metadata เพื่อประหยัดแบนด์วิธ
+          asset.setAttribute('preload', 'auto'); // เปลี่ยนกลับเป็น auto เพื่อให้เสียงชัด
           asset.setAttribute('loop', '');
           asset.setAttribute('muted', '');
           asset.setAttribute('playsinline', '');
@@ -376,14 +376,14 @@
               careerModel.setAttribute('visible', 'true');
               careerModel.setAttribute('shadow', 'cast:false; receive:false'); // ปิด shadow เพื่อประสิทธิภาพ
               
-              // กำหนดขนาดตามอาชีพ (ขยายทุกอันยกเว้น Cloud)
+              // กำหนดขนาดตามอาชีพ (ขยายทุกอันให้ใหญ่ขึ้น)
               let modelScale;
               if (careerName === 'Cloud Engineer') {
-                modelScale = '0.2 0.2 0.2'; // ขนาดปกติสำหรับ Cloud
-                console.log('ใช้ขนาดปกติสำหรับ Cloud Engineer');
+                modelScale = '0.4 0.4 0.4'; // ขยายขนาดสำหรับ Cloud
+                console.log('ขยายขนาดสำหรับ Cloud Engineer');
               } else {
-                modelScale = '0.3 0.3 0.3'; // ขยายขนาดสำหรับอาชีพอื่น
-                console.log('ขยายขนาดสำหรับ:', careerName);
+                modelScale = '0.5 0.5 0.5'; // ขยายขนาดมากขึ้นสำหรับอาชีพอื่น
+                console.log('ขยายขนาดมากสำหรับ:', careerName);
               }
               
               careerModel.setAttribute('scale', modelScale); 
@@ -400,11 +400,11 @@
               
               // รอสักครู่ให้ A-Frame ประมวลผลการลบ
               setTimeout(() => {
-                // ตั้งค่าใหม่ทั้งหมด - ปรับลดคุณภาพเพื่อประสิทธิภาพ
+                // ตั้งค่าใหม่ทั้งหมด - ขยายขนาดวิดีโอ
                 careerVideo.setAttribute('material', `src: ${videoRef}; side: double; transparent: false; shader: flat`);
                 careerVideo.setAttribute('visible', 'true');
-                careerVideo.setAttribute('width', '1.5'); 
-                careerVideo.setAttribute('height', '0.84'); 
+                careerVideo.setAttribute('width', '2.0'); // ขยายความกว้าง
+                careerVideo.setAttribute('height', '1.1'); // ขยายความสูง
                 careerVideo.setAttribute('position', '0.4 0.5 -0.1');
                 careerVideo.setAttribute('rotation', '0 0 0');
                 careerVideo.setAttribute('shadow', 'cast:false; receive:false'); // ปิด shadow
