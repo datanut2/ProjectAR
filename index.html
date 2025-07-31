@@ -2,7 +2,10 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>AR Scanner with Career Button</title>
   <!-- A-Frame core -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
@@ -24,7 +27,7 @@
 </head>
 <body style="margin:0; overflow:hidden;">
   <div class="scan-frame"></div>
-  <div id="status">11กำลังค้นหา Hiro Marker...</div>
+  <div id="status">กำลังค้นหา Hiro Marker...</div>
   <div id="unlock">แตะหน้าจอเพื่อเริ่มใช้งาน AR</div>
   <!-- ปุ่มอาชีพ -->
   <button id="career-btn">อาชีพที่น่าสนใจ</button>
@@ -39,22 +42,22 @@
     <button id="close-menu">ปิด</button>
   </div>
 
-  <audio id="voice" src="voice.mp3" preload="auto"></audio>
-  <video id="side-video" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous" style="display:none;"></video>
+  <audio id="voice" src="voice.mp3" preload="metadata"></audio>
+  <video id="side-video" src="career-video.mp4" preload="metadata" loop muted playsinline crossorigin="anonymous" style="display:none;"></video>
 
-  <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true" arjs="sourceType:webcam; debugUIEnabled:false;" style="visibility:hidden;">
-    <a-assets>
+  <a-scene id="ar-scene" embedded vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true; colorManagement:false; antialias:false; precision:mediump;" arjs="sourceType:webcam; debugUIEnabled:false; detectionMode:mono_and_matrix; matrixCodeType:3x3; maxDetectionRate:30;" style="visibility:hidden;">
+    <a-assets timeout="10000">
       <a-asset-item id="animated-model" src="model.glb"></a-asset-item>
-      <video id="side-video-element" src="career-video.mp4" preload="auto" loop muted playsinline crossorigin="anonymous"></video>
+      <video id="side-video-element" src="career-video.mp4" preload="metadata" loop muted playsinline crossorigin="anonymous"></video>
     </a-assets>
     
     <!-- Marker container (แสดงเมื่อสแกน Hiro marker) -->
     <a-marker preset="hiro" id="hiro-marker">
       <a-entity id="marker-container" visible="true">
         <!-- โมเดลจาก marker (ด้านหน้า - ตำแหน่งเดียวกับอาชีพอื่น) -->
-        <a-entity id="model-entity" gltf-model="#animated-model" animation-mixer position="-0.3 0.08 0.1" scale="0.3 0.3 0.3" rotation="0 45 0"></a-entity>
+        <a-entity id="model-entity" gltf-model="#animated-model" animation-mixer="clip:*; loop:repeat; timeScale:1" position="-0.3 0.08 0.1" scale="0.3 0.3 0.3" rotation="0 45 0" shadow="cast:false; receive:false"></a-entity>
         <!-- วิดีโอจาก marker (ด้านหลัง - ตำแหน่งเดียวกับอาชีพอื่น) -->
-        <a-video id="video-entity" src="#side-video-element" position="0.4 0.5 -0.1" width="1.5" height="0.84" rotation="0 0 0" autoplay loop muted></a-video>
+        <a-video id="video-entity" src="#side-video-element" position="0.4 0.5 -0.1" width="1.5" height="0.84" rotation="0 0 0" autoplay loop muted shadow="cast:false; receive:false"></a-video>
       </a-entity>
     </a-marker>
     
@@ -62,15 +65,15 @@
     <a-entity camera position="0 1.6 0">
       <a-entity id="career-container" position="0 -0.5 -3" visible="false">
         <!-- วิดีโอ - อยู่ด้านหลัง (ขยับขึ้นและไปขวา) -->
-        <a-video id="career-video" position="0.4 0.5 -0.1" width="1.5" height="0.84" rotation="0 0 0"></a-video>
+        <a-video id="career-video" position="0.4 0.5 -0.1" width="1.5" height="0.84" rotation="0 0 0" shadow="cast:false; receive:false"></a-video>
         <!-- โมเดล - อยู่ด้านหน้า (เท้าชิดขอบล่างวิดีโอ) -->
-        <a-entity id="career-model" position="-0.3 0.08 0.1" scale="0.2 0.2 0.2" rotation="0 45 0"></a-entity>
+        <a-entity id="career-model" position="-0.3 0.08 0.1" scale="0.2 0.2 0.2" rotation="0 45 0" shadow="cast:false; receive:false"></a-entity>
         <!-- ข้อความแสดงสถานะ -->
         <a-text id="career-status" position="0 -1.2 0" value="Career Content Loading..." align="center" color="white" width="4"></a-text>
       </a-entity>
     </a-entity>
-    <a-entity light="type: ambient; intensity:0.6"></a-entity>
-    <a-entity light="type: directional; intensity:0.8" position="-1 1 0"></a-entity>
+    <a-entity light="type: ambient; intensity:0.4"></a-entity>
+    <a-entity light="type: directional; intensity:0.6; castShadow:false" position="-1 1 0"></a-entity>
   </a-scene>
 
   <script>
@@ -135,13 +138,12 @@
           asset = document.createElement('video');
           asset.setAttribute('id', uniqueId);
           asset.setAttribute('src', `${src}?t=${timestamp}`);
-          asset.setAttribute('preload', 'auto');
+          asset.setAttribute('preload', 'metadata'); // เปลี่ยนเป็น metadata เพื่อประหยัดแบนด์วิธ
           asset.setAttribute('loop', '');
           asset.setAttribute('muted', '');
           asset.setAttribute('playsinline', '');
           asset.setAttribute('crossorigin', 'anonymous');
-          // บังคับให้โหลดใหม่
-          asset.load();
+          // ไม่ต้อง load ทันที เพื่อประหยัดทรัพยากร
         }
         
         if (asset) {
@@ -329,8 +331,9 @@
               // ตั้งค่าโมเดลใหม่ (อยู่ด้านหน้า) - ขนาดแตกต่างกันตามอาชีพ
               console.log('ตั้งค่าโมเดล...', modelRef);
               careerModel.setAttribute('gltf-model', modelRef);
-              careerModel.setAttribute('animation-mixer', '');
+              careerModel.setAttribute('animation-mixer', 'clip:*; loop:repeat; timeScale:1'); // ปรับ animation
               careerModel.setAttribute('visible', 'true');
+              careerModel.setAttribute('shadow', 'cast:false; receive:false'); // ปิด shadow เพื่อประสิทธิภาพ
               
               // กำหนดขนาดตามอาชีพ (ขยายทุกอันยกเว้น Cloud)
               let modelScale;
@@ -356,13 +359,14 @@
               
               // รอสักครู่ให้ A-Frame ประมวลผลการลบ
               setTimeout(() => {
-                // ตั้งค่าใหม่ทั้งหมด
+                // ตั้งค่าใหม่ทั้งหมด - ปรับลดคุณภาพเพื่อประสิทธิภาพ
                 careerVideo.setAttribute('material', `src: ${videoRef}; side: double; transparent: false; shader: flat`);
                 careerVideo.setAttribute('visible', 'true');
-                careerVideo.setAttribute('width', '1.5'); // ขยายขนาดวิดีโอเล็กน้อย
+                careerVideo.setAttribute('width', '1.5'); 
                 careerVideo.setAttribute('height', '0.84'); 
-                careerVideo.setAttribute('position', '0.4 0.5 -0.1'); // ขวา ขึ้น ด้านหลัง
+                careerVideo.setAttribute('position', '0.4 0.5 -0.1');
                 careerVideo.setAttribute('rotation', '0 0 0');
+                careerVideo.setAttribute('shadow', 'cast:false; receive:false'); // ปิด shadow
                 
                 // บังคับให้ A-Frame อัพเดต
                 careerVideo.flushToDOM();
@@ -375,8 +379,10 @@
               if (videoAsset) {
                 console.log('Video asset พบ:', videoAsset.src);
                 console.log('Video ready state:', videoAsset.readyState);
-                // บังคับให้วิดีโอโหลด
-                videoAsset.load();
+                // โหลดเมื่อจำเป็นเท่านั้น
+                if (videoAsset.readyState < 2) {
+                  videoAsset.load();
+                }
               } else {
                 console.error('ไม่พบ video asset');
               }
@@ -416,8 +422,10 @@
                   videoElement.muted = true; 
                   videoElement.loop = true;
                   
-                  // Force load the new video
-                  videoElement.load();
+                  // Force load only when needed
+                  if (videoElement.readyState < 2) {
+                    videoElement.load();
+                  }
                   
                   // รอให้วิดีโอโหลดเสร็จ
                   const playVideo = () => {
@@ -469,7 +477,7 @@
                 status.textContent = `แสดง: ${careerName} เสร็จแล้ว`;
                 status.style.background = 'rgba(0,255,0,0.7)';
                 careerStatus.setAttribute('value', `${careerName} Ready!`);
-              }, 2000); // เพิ่มเวลารอให้ assets โหลดเสร็จ
+              }, 1500); // ลดเวลารอเพื่อให้รู้สึกเร็วขึ้น
               
             }, 500);
             
@@ -513,10 +521,10 @@
         const sideVideoElement = document.getElementById('side-video-element');
         sideVideoElement.currentTime = 0; 
         sideVideoElement.play().catch(e=>console.warn(e)); 
-        setTimeout(()=>{ 
+        setTimeout(() => {
           voice.currentTime=0; 
           voice.play().catch(e=>console.warn(e)); 
-        },1000);
+        },500); // ลดเวลาหน่วงเสียง
       });
 
       // หาย marker - โมเดลยังคงแสดงอยู่ (sticky display)
